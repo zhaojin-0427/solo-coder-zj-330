@@ -41,11 +41,11 @@ export const GROUP_PRESETS: string[] = [
 
 export const PAPER_META: Record<
   PaperSize,
-  { label: string; width: number; height: number; cols: number }
+  { label: string; width: number; height: number; cols: number; maxWidth: string }
 > = {
-  A4: { label: "A4 纸", width: 595, height: 842, cols: 2 },
-  A5: { label: "A5 纸", width: 420, height: 595, cols: 2 },
-  label: { label: "标签纸", width: 595, height: 842, cols: 3 },
+  A4: { label: "A4 纸", width: 595, height: 842, cols: 2, maxWidth: "max-w-3xl" },
+  A5: { label: "A5 纸", width: 420, height: 595, cols: 1, maxWidth: "max-w-md" },
+  label: { label: "标签纸", width: 595, height: 842, cols: 3, maxWidth: "max-w-3xl" },
 };
 
 export const FONT_SIZE_LABEL: Record<FontSizeLevel, string> = {

@@ -111,7 +111,13 @@ export default function PrintPreview() {
           提示：点击「打印 / 导出 PDF」后，在系统对话框中选择“另存为 PDF”即可保存。下方为实际打印内容预览。
         </p>
 
-        <div className="print-root mx-auto max-w-3xl rounded-xl bg-white p-4 shadow-2xl sm:p-6">
+        <div
+          className={cn(
+            "print-root mx-auto rounded-xl bg-white p-4 shadow-2xl transition-all duration-300 sm:p-6",
+            paper.maxWidth,
+          )}
+          style={{ aspectRatio: tab === "pocket" ? undefined : `${paper.width} / ${paper.height}` }}
+        >
           <div className="mb-4 flex items-center justify-between border-b border-paper-line pb-2">
             <h3 className="font-serif text-xl font-black text-paper-ink">
               {currentName || "服药方案"}

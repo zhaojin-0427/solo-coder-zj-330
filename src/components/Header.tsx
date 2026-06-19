@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Save,
   FolderOpen,
@@ -25,6 +25,10 @@ export default function Header() {
   const setFontSize = useMedStore((s) => s.setFontSize);
 
   const [name, setName] = useState(currentName);
+
+  useEffect(() => {
+    setName(currentName);
+  }, [currentName]);
 
   const handleSave = () => {
     saveCurrent(name || currentName);
