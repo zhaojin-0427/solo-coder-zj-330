@@ -6,6 +6,8 @@ import type {
   Scheme,
   SlotMeta,
   TimeSlot,
+  ChecklistGroupMode,
+  ChecklistOrientation,
 } from "@/types";
 
 export const SLOT_LIST: SlotMeta[] = [
@@ -81,6 +83,10 @@ export const SAMPLE_SCHEME: Scheme = {
       dosage: "1 片（5mg）",
       notes: "服药后避免起身过快，注意监测血压",
       group: "降压药",
+      startDate: new Date().toISOString().split("T")[0],
+      courseDays: 30,
+      enableChecklist: true,
+      completedSlots: {},
     },
     {
       id: "m-2",
@@ -91,6 +97,10 @@ export const SAMPLE_SCHEME: Scheme = {
       dosage: "1 片（500mg）",
       notes: "随餐服用，勿嚼碎",
       group: "降糖药",
+      startDate: new Date().toISOString().split("T")[0],
+      courseDays: 30,
+      enableChecklist: true,
+      completedSlots: {},
     },
     {
       id: "m-3",
@@ -101,6 +111,10 @@ export const SAMPLE_SCHEME: Scheme = {
       dosage: "半片（50mg）",
       notes: "空腹温水送服，注意是否有黑便",
       group: "心血管药",
+      startDate: new Date().toISOString().split("T")[0],
+      courseDays: 30,
+      enableChecklist: true,
+      completedSlots: {},
     },
     {
       id: "m-4",
@@ -111,6 +125,10 @@ export const SAMPLE_SCHEME: Scheme = {
       dosage: "1 片",
       notes: "午饭后嚼服，多喝水",
       group: "维生素",
+      startDate: new Date().toISOString().split("T")[0],
+      courseDays: 30,
+      enableChecklist: true,
+      completedSlots: {},
     },
   ],
 };
@@ -121,4 +139,6 @@ export const DEFAULT_SETTINGS = {
   showIcons: true,
   paperSize: "A4" as PaperSize,
   pocketMode: false,
+  checklistGroupMode: "byDrug" as ChecklistGroupMode,
+  checklistOrientation: "landscape" as ChecklistOrientation,
 };

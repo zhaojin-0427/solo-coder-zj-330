@@ -6,6 +6,10 @@ export type PaperSize = "A4" | "A5" | "label";
 
 export type FontSizeLevel = "large" | "xlarge" | "xxlarge";
 
+export type ChecklistGroupMode = "byDrug" | "byDate";
+
+export type ChecklistOrientation = "portrait" | "landscape";
+
 export interface Medicine {
   id: string;
   name: string;
@@ -15,6 +19,10 @@ export interface Medicine {
   dosage: string;
   notes: string;
   group: string;
+  startDate: string;
+  courseDays: number;
+  enableChecklist: boolean;
+  completedSlots: Record<string, TimeSlot[]>;
 }
 
 export interface Scheme {
@@ -31,6 +39,25 @@ export interface Settings {
   showIcons: boolean;
   paperSize: PaperSize;
   pocketMode: boolean;
+  checklistGroupMode: ChecklistGroupMode;
+  checklistOrientation: ChecklistOrientation;
+}
+
+export interface ChecklistCell {
+  medicineId: string;
+  medicineName: string;
+  dosage: string;
+  date: string;
+  dayOfWeek: string;
+  slot: TimeSlot;
+  isInCourse: boolean;
+  isCompleted: boolean;
+  isMissed: boolean;
+}
+
+export interface DateSlotKey {
+  date: string;
+  slot: TimeSlot;
 }
 
 export interface SlotMeta {

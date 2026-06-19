@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { X, Printer, StickyNote, CreditCard } from "lucide-react";
+import { X, Printer, StickyNote, CreditCard, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PAPER_META } from "@/lib/constants";
 import { useMedStore } from "@/store/useMedStore";
 import StickerLabel from "@/components/StickerLabel";
 import PocketCard from "@/components/PocketCard";
+import ChecklistView from "@/components/ChecklistView";
 import type { Medicine, PaperSize } from "@/types";
 
 function groupMedicines(medicines: Medicine[]): [string, Medicine[]][] {
@@ -25,7 +26,7 @@ export default function PrintPreview() {
   const currentName = useMedStore((s) => s.currentName);
   const setPaper = useMedStore((s) => s.setPaper);
 
-  const [tab, setTab] = useState<"sticker" | "pocket">("sticker");
+  const [tab, setTab] = useState<"sticker" | "pocket" | "checklist">("sticker");
 
   if (!open) return null;
 
@@ -64,6 +65,17 @@ export default function PrintPreview() {
               <CreditCard size={15} />
               随身卡
             </button>
+            <button
+              type="button"
+              onClick={() => setTab("checklist")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-bold transition",
+                tab === "checklist" ? "bg-amber text-zinc-900" : "text-white/80",
+              )}
+            >
+              <ListChecks size={15} />
+              核对清单
+            </button>
           </div>
         </div>
 
@@ -85,6 +97,45 @@ export default function PrintPreview() {
                   {PAPER_META[p].label}
                 </button>
               ))}
+            </div>
+          )}
+          {tab === "checklist" && (
+            <div className="flex items-center gap-1 rounded-lg bg-white/10 p-0.5">
+              <span className="px-2 text-xs font-bold text-white/60">
+                A4 排版
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  useMedStore
+                    .getState()
+                    .setChecklistOrientation("portrait")
+                }
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-xs font-bold transition",
+                  settings.checklistOrientation === "portrait"
+                    ? "bg-amber text-zinc-900"
+                    : "text-white/80",
+                )}
+              >
+                纵向
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  useMedStore
+                    .getState()
+                    .setChecklistOrientation("landscape")
+                }
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-xs font-bold transition",
+                  settings.checklistOrientation === "landscape"
+                    ? "bg-amber text-zinc-900"
+                    : "text-white/80",
+                )}
+              >
+                横向
+              </button>
             </div>
           )}
           <button
@@ -114,16 +165,37 @@ export default function PrintPreview() {
         <div
           className={cn(
             "print-root mx-auto rounded-xl bg-white p-4 shadow-2xl transition-all duration-300 sm:p-6",
-            paper.maxWidth,
+            tab === "checklist"
+              ? settings.checklistOrientation === "landscape"
+                ? "max-w-6xl"
+                : "max-w-4xl"
+              : paper.maxWidth,
           )}
-          style={{ aspectRatio: tab === "pocket" ? undefined : `${paper.width} / ${paper.height}` }}
+          style={
+            tab === "pocket"
+              ? undefined
+              : tab === "checklist"
+                ? {
+                    aspectRatio:
+                      settings.checklistOrientation === "landscape"
+                        ? `${paper.height} / ${paper.width}`
+                        : `${paper.width} / ${paper.height}`,
+                  }
+                : { aspectRatio: `${paper.width} / ${paper.height}` }
+          }
         >
           <div className="mb-4 flex items-center justify-between border-b border-paper-line pb-2">
             <h3 className="font-serif text-xl font-black text-paper-ink">
               {currentName || "服药方案"}
             </h3>
             <span className="text-xs font-semibold text-paper-muted">
-              {tab === "sticker" ? `${paper.label} · 标签贴纸` : "随身服药卡"}
+              {tab === "sticker"
+                ? `${paper.label} · 标签贴纸`
+                : tab === "pocket"
+                  ? "随身服药卡"
+                  : settings.checklistOrientation === "landscape"
+                    ? "A4 横向 · 服药核对清单"
+                    : "A4 纵向 · 服药核对清单"}
             </span>
           </div>
 
@@ -159,7 +231,7 @@ export default function PrintPreview() {
                 ))}
               </div>
             )
-          ) : (
+          ) : tab === "pocket" ? (
             <div className="flex justify-center">
               <PocketCard
                 name={currentName}
@@ -167,6 +239,8 @@ export default function PrintPreview() {
                 settings={settings}
               />
             </div>
+          ) : (
+            <ChecklistView medicines={medicines} settings={settings} />
           )}
         </div>
       </div>

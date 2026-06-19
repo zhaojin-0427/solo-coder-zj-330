@@ -26,12 +26,15 @@ export function saveSchemes(schemes: Scheme[]): void {
 
 export function loadSettings(): Settings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  const saved = safeParse<Partial<Settings>>(
+    window.localStorage.getItem(KEY_SETTINGS),
+    {},
+  );
   return {
     ...DEFAULT_SETTINGS,
-    ...safeParse<Partial<Settings>>(
-      window.localStorage.getItem(KEY_SETTINGS),
-      {},
-    ),
+    ...saved,
+    checklistGroupMode: saved.checklistGroupMode ?? DEFAULT_SETTINGS.checklistGroupMode,
+    checklistOrientation: saved.checklistOrientation ?? DEFAULT_SETTINGS.checklistOrientation,
   };
 }
 

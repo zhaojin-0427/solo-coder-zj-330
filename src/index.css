@@ -58,6 +58,76 @@ html[data-contrast="high"] .hc-invert {
   border-color: #ffffff !important;
 }
 
+html[data-contrast="high"] .print-root {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+html[data-contrast="high"] .print-root table,
+html[data-contrast="high"] .print-root th,
+html[data-contrast="high"] .print-root td {
+  border-color: #000000 !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+html[data-contrast="high"] .print-root th {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+html[data-contrast="high"] .print-root .bg-amber-soft\/30,
+html[data-contrast="high"] .print-root .bg-paper-shade\/30,
+html[data-contrast="high"] .print-root .bg-amber-tint\/20 {
+  background-color: #f0f0f0 !important;
+}
+
+html[data-contrast="high"] .print-root .bg-morning,
+html[data-contrast="high"] .print-root .bg-noon,
+html[data-contrast="high"] .print-root .bg-evening {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+html[data-contrast="high"] .print-root .bg-red-50 {
+  background-color: #ffebee !important;
+}
+
+html[data-contrast="high"] .print-root .border-red-500 {
+  border-color: #ff0000 !important;
+  border-width: 3px !important;
+}
+
+html[data-contrast="high"] .print-root .text-red-600 {
+  color: #ff0000 !important;
+  font-weight: 900 !important;
+}
+
+html[data-contrast="high"] .print-root .text-amber-deep {
+  color: #000000 !important;
+  font-weight: 900 !important;
+}
+
+html[data-contrast="high"] .print-root .text-paper-muted {
+  color: #666666 !important;
+}
+
+html[data-contrast="high"] .print-root .bg-green-100 {
+  background-color: #e8f5e9 !important;
+  border-color: #2e7d32 !important;
+  border-width: 2px !important;
+}
+
+html[data-contrast="high"] .print-root .text-green-700 {
+  color: #2e7d32 !important;
+  font-weight: 900 !important;
+}
+
+html[data-contrast="high"] .print-root .bg-green-600 {
+  background-color: #2e7d32 !important;
+  border-color: #2e7d32 !important;
+}
+
 /* 焦点可见 */
 :focus-visible {
   outline: 3px solid #e8a33d;
@@ -120,6 +190,46 @@ html[data-contrast="high"] .hc-invert {
   }
   .print-page-break {
     break-after: page;
+  }
+
+  .print-root table {
+    border-collapse: collapse !important;
+  }
+  .print-root th,
+  .print-root td {
+    border: 1px solid #000 !important;
+  }
+  .print-root th {
+    background: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .bg-morning,
+  .print-root .bg-noon,
+  .print-root .bg-evening {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .bg-red-50 {
+    background: #ffebee !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .bg-green-100 {
+    background: #e8f5e9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .border-red-500 {
+    border-color: #ff0000 !important;
+    border-width: 2px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .text-red-600 {
+    color: #ff0000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 

@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { SLOT_LIST, mealMeta } from "@/lib/constants";
-import { slotTheme } from "@/lib/format";
-import type { Medicine, Settings } from "@/types";
+import { slotTheme, formatDate, getDayOfWeek, isDateInCourse } from "@/lib/format";
+import { useMedStore } from "@/store/useMedStore";
+import type { Medicine, Settings, TimeSlot } from "@/types";
 
 interface PocketCardProps {
   name: string;
@@ -15,6 +17,32 @@ export default function PocketCard({
   settings,
 }: PocketCardProps) {
   const showIcons = settings.showIcons;
+  const toggleChecklistSlot = useMedStore((s) => s.toggleChecklistSlot);
+
+  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  const todayChecklist = useMemo(() => {
+    return medicines
+      .filter((m) => m.enableChecklist && isDateInCourse(today, m.startDate, m.courseDays))
+      .flatMap((m) =>
+        m.slots.map((slot) => ({
+          medicineId: m.id,
+          medicineName: m.name,
+          dosage: m.dosage,
+          slot,
+          isCompleted: (m.completedSlots[today] || []).includes(slot),
+        })),
+      );
+  }, [medicines, today]);
+
+  const groupBySlot = useMemo(() => {
+    const map = new Map<TimeSlot, typeof todayChecklist>();
+    for (const item of todayChecklist) {
+      if (!map.has(item.slot)) map.set(item.slot, []);
+      map.get(item.slot)!.push(item);
+    }
+    return map;
+  }, [todayChecklist]);
 
   return (
     <div className="paper-surface mx-auto w-full max-w-md overflow-hidden rounded-2xl border-2 border-paper-ink bg-white shadow-sticker print-shadow-none">
@@ -88,6 +116,87 @@ export default function PocketCard({
           按时段服药，勿漏服勿加倍。如有不适请及时联系家人或医生。
         </p>
       </div>
+
+      {todayChecklist.length > 0 && (
+        <div className="border-t-2 border-dashed border-paper-line bg-amber-soft/30 px-3 py-2">
+          <div className="mb-1.5 flex items-center justify-between">
+            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-amber-deep">
+              今日服药核对
+            </p>
+            <p className="text-[0.55rem] font-bold text-paper-muted">
+              {formatDate(today)} {getDayOfWeek(today)}
+            </p>
+          </div>
+          <div className="space-y-1">
+            {SLOT_LIST.map((slot) => {
+              const items = groupBySlot.get(slot.key) || [];
+              if (items.length === 0) return null;
+              const theme = slotTheme(slot.key);
+              return (
+                <div key={slot.key}>
+                  <div
+                    className={cn(
+                      "mb-0.5 inline-flex items-center gap-0.5 rounded px-1 py-0.5",
+                      theme.chip,
+                    )}
+                  >
+                    {showIcons && (
+                      <span className="text-[0.6rem]" aria-hidden>
+                        {slot.emoji}
+                      </span>
+                    )}
+                    <span className="text-[0.55rem] font-black">
+                      {slot.label} {slot.time}
+                    </span>
+                  </div>
+                  <div className="space-y-0.5 pl-1">
+                    {items.map((item) => (
+                      <button
+                        key={`${item.medicineId}-${item.slot}`}
+                        type="button"
+                        onClick={() =>
+                          toggleChecklistSlot(
+                            item.medicineId,
+                            today,
+                            item.slot,
+                          )
+                        }
+                        className={cn(
+                          "flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left transition",
+                          item.isCompleted
+                            ? "bg-green-100 text-green-700"
+                            : "bg-white/80 text-paper-ink hover:bg-amber-tint/50",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border text-[0.6rem] font-black",
+                            item.isCompleted
+                              ? "border-green-600 bg-green-600 text-white"
+                              : "border-paper-line text-paper-muted/50",
+                          )}
+                        >
+                          {item.isCompleted ? "✓" : "□"}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[0.65rem] font-bold leading-tight">
+                            {item.medicineName}
+                          </p>
+                          {item.dosage && (
+                            <p className="truncate text-[0.55rem] text-paper-muted">
+                              {item.dosage}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

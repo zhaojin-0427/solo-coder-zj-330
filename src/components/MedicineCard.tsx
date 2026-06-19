@@ -1,4 +1,4 @@
-import { ChevronUp, ChevronDown, Trash2 } from "lucide-react";
+import { ChevronUp, ChevronDown, Trash2, Calendar, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   FREQUENCY_PRESETS,
@@ -6,7 +6,7 @@ import {
   MEAL_LIST,
   SLOT_LIST,
 } from "@/lib/constants";
-import { slotTheme } from "@/lib/format";
+import { slotTheme, formatDate } from "@/lib/format";
 import { useMedStore } from "@/store/useMedStore";
 import type { Medicine } from "@/types";
 
@@ -26,6 +26,7 @@ export default function MedicineCard({
   const moveMedicine = useMedStore((s) => s.moveMedicine);
   const toggleSlot = useMedStore((s) => s.toggleSlot);
   const setMeal = useMedStore((s) => s.setMeal);
+  const clearCompletedSlots = useMedStore((s) => s.clearCompletedSlots);
   const showIcons = useMedStore((s) => s.settings.showIcons);
 
   return (
@@ -200,8 +201,109 @@ export default function MedicineCard({
         onChange={(e) => updateMedicine(medicine.id, { notes: e.target.value })}
         placeholder="例如：服药后避免起身过快"
         rows={2}
-        className="w-full resize-y rounded-xl border-2 border-paper-line bg-paper/50 px-3 py-2 text-base text-paper-ink outline-none focus:border-amber"
+        className="mb-4 w-full resize-y rounded-xl border-2 border-paper-line bg-paper/50 px-3 py-2 text-base text-paper-ink outline-none focus:border-amber"
       />
+
+      <div className="rounded-xl border-2 border-amber-soft bg-amber-tint/20 p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="text-amber-deep" />
+            <span className="text-sm font-black text-amber-deep">服药核对设置</span>
+          </div>
+          <label className="inline-flex cursor-pointer items-center gap-2">
+            <span className="text-xs font-bold text-paper-muted">启用核对</span>
+            <span className="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full bg-paper-line transition-colors duration-200 ease-in-out focus:outline-none">
+              <input
+                type="checkbox"
+                checked={medicine.enableChecklist}
+                onChange={(e) =>
+                  updateMedicine(medicine.id, { enableChecklist: e.target.checked })
+                }
+                className="peer sr-only"
+              />
+              <span
+                className={cn(
+                  "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                  medicine.enableChecklist ? "translate-x-5" : "translate-x-0.5",
+                )}
+              />
+              <span
+                className={cn(
+                  "absolute inset-0 rounded-full transition-colors duration-200",
+                  medicine.enableChecklist ? "bg-amber" : "bg-paper-line",
+                )}
+              />
+            </span>
+          </label>
+        </div>
+
+        {medicine.enableChecklist && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs font-bold text-paper-muted">
+                  开始日期
+                </label>
+                <input
+                  type="date"
+                  value={medicine.startDate}
+                  onChange={(e) =>
+                    updateMedicine(medicine.id, { startDate: e.target.value })
+                  }
+                  className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-amber"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-paper-muted">
+                  疗程天数
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={medicine.courseDays}
+                  onChange={(e) =>
+                    updateMedicine(medicine.id, {
+                      courseDays: Math.max(1, parseInt(e.target.value) || 1),
+                    })
+                  }
+                  className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-amber"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg bg-white/60 px-2 py-1.5">
+              <div className="text-xs">
+                <span className="font-bold text-paper-ink">疗程范围：</span>
+                <span className="text-paper-muted">
+                  {formatDate(medicine.startDate)} ~{" "}
+                  {formatDate(
+                    (() => {
+                      const d = new Date(medicine.startDate);
+                      d.setDate(d.getDate() + medicine.courseDays - 1);
+                      return d.toISOString().split("T")[0];
+                    })(),
+                  )}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    window.confirm("确定要清空所有已核对的记录吗？")
+                  ) {
+                    clearCompletedSlots(medicine.id);
+                  }
+                }}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-red-500 transition hover:bg-red-50"
+              >
+                <RotateCcw size={12} />
+                清空记录
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

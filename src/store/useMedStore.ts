@@ -1,12 +1,13 @@
 import { create } from "zustand";
 import type {
-  Medicine,
   Scheme,
   Settings,
   TimeSlot,
   MealRelation,
   PaperSize,
   FontSizeLevel,
+  ChecklistGroupMode,
+  ChecklistOrientation,
 } from "@/types";
 import {
   DEFAULT_SETTINGS,
@@ -21,6 +22,7 @@ import {
   saveSchemes,
   saveSettings,
 } from "@/lib/storage";
+import type { Medicine } from "@/types";
 
 interface MedState {
   medicines: Medicine[];
@@ -37,6 +39,8 @@ interface MedState {
   moveMedicine: (id: string, dir: -1 | 1) => void;
   toggleSlot: (id: string, slot: TimeSlot) => void;
   setMeal: (id: string, meal: MealRelation) => void;
+  toggleChecklistSlot: (medicineId: string, date: string, slot: TimeSlot) => void;
+  clearCompletedSlots: (medicineId: string) => void;
 
   newScheme: () => void;
   loadSample: () => void;
@@ -49,12 +53,15 @@ interface MedState {
   setPaper: (paper: PaperSize) => void;
   toggleContrast: () => void;
   toggleIcons: () => void;
+  setChecklistGroupMode: (mode: ChecklistGroupMode) => void;
+  setChecklistOrientation: (orientation: ChecklistOrientation) => void;
 
   setPreviewOpen: (open: boolean) => void;
   setSchemeDrawerOpen: (open: boolean) => void;
 }
 
 function createEmptyMedicine(): Medicine {
+  const today = new Date().toISOString().split("T")[0];
   return {
     id: uid(),
     name: "",
@@ -64,6 +71,10 @@ function createEmptyMedicine(): Medicine {
     dosage: "",
     notes: "",
     group: "其他",
+    startDate: today,
+    courseDays: 7,
+    enableChecklist: true,
+    completedSlots: {},
   };
 }
 
@@ -74,6 +85,17 @@ function applySettingsToDom(settings: Settings): void {
   root.dataset.contrast = settings.highContrast ? "high" : "normal";
 }
 
+function migrateMedicineFields(m: Medicine): Medicine {
+  const today = new Date().toISOString().split("T")[0];
+  return {
+    ...m,
+    startDate: m.startDate ?? today,
+    courseDays: m.courseDays ?? 7,
+    enableChecklist: m.enableChecklist ?? true,
+    completedSlots: m.completedSlots ?? {},
+  };
+}
+
 const initialSettings = loadSettings();
 applySettingsToDom(initialSettings);
 
@@ -82,8 +104,9 @@ const initialCurrentId = loadCurrentId();
 const initialScheme =
   persistedSchemes.find((s) => s.id === initialCurrentId) ?? null;
 
-const initialMedicines =
-  initialScheme?.medicines ?? SAMPLE_SCHEME.medicines;
+const initialMedicines = (
+  initialScheme?.medicines ?? SAMPLE_SCHEME.medicines
+).map(migrateMedicineFields);
 const initialName = initialScheme?.name ?? "新建方案";
 
 export const useMedStore = create<MedState>((set, get) => ({
@@ -156,7 +179,9 @@ export const useMedStore = create<MedState>((set, get) => ({
 
   loadSample: () => {
     set({
-      medicines: SAMPLE_SCHEME.medicines.map((m) => ({ ...m, id: uid() })),
+      medicines: SAMPLE_SCHEME.medicines.map((m) =>
+        migrateMedicineFields({ ...m, id: uid() }),
+      ),
       currentName: SAMPLE_SCHEME.name,
       dirty: true,
     });
@@ -197,7 +222,7 @@ export const useMedStore = create<MedState>((set, get) => ({
 
   loadScheme: (scheme) => {
     set({
-      medicines: scheme.medicines.map((m) => ({ ...m })),
+      medicines: scheme.medicines.map((m) => migrateMedicineFields({ ...m })),
       currentName: scheme.name,
       dirty: false,
     });
@@ -226,6 +251,41 @@ export const useMedStore = create<MedState>((set, get) => ({
     get().updateSettings({ highContrast: !get().settings.highContrast }),
   toggleIcons: () =>
     get().updateSettings({ showIcons: !get().settings.showIcons }),
+
+  toggleChecklistSlot: (medicineId, date, slot) => {
+    set((s) => ({
+      medicines: s.medicines.map((m) => {
+        if (m.id !== medicineId) return m;
+        const completed = m.completedSlots[date] || [];
+        const has = completed.includes(slot);
+        return {
+          ...m,
+          completedSlots: {
+            ...m.completedSlots,
+            [date]: has
+              ? completed.filter((x) => x !== slot)
+              : [...completed, slot],
+          },
+        };
+      }),
+      dirty: true,
+    }));
+  },
+
+  clearCompletedSlots: (medicineId) => {
+    set((s) => ({
+      medicines: s.medicines.map((m) =>
+        m.id === medicineId ? { ...m, completedSlots: {} } : m,
+      ),
+      dirty: true,
+    }));
+  },
+
+  setChecklistGroupMode: (mode) =>
+    get().updateSettings({ checklistGroupMode: mode }),
+
+  setChecklistOrientation: (orientation) =>
+    get().updateSettings({ checklistOrientation: orientation }),
 
   setPreviewOpen: (open) => set({ previewOpen: open }),
   setSchemeDrawerOpen: (open) => set({ schemeDrawerOpen: open }),
