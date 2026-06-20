@@ -22,6 +22,7 @@ function HandoverSlotCard({ date, slot }: HandoverSlotCardProps) {
   const meta = SLOT_LIST.find((s) => s.key === slot)!;
   const showIcons = useMedStore((s) => s.settings.showIcons);
   const caregivers = useMedStore((s) => s.caregivers);
+  const handoverRecords = useMedStore((s) => s.handoverRecords);
   const getHandoverRecord = useMedStore((s) => s.getHandoverRecord);
   const toggleHandoverItem = useMedStore((s) => s.toggleHandoverItem);
   const setHandoverCaregiver = useMedStore((s) => s.setHandoverCaregiver);
@@ -29,7 +30,7 @@ function HandoverSlotCard({ date, slot }: HandoverSlotCardProps) {
 
   const record = useMemo(
     () => getHandoverRecord(date, slot),
-    [getHandoverRecord, date, slot],
+    [getHandoverRecord, date, slot, handoverRecords],
   );
 
   const assignedCaregiver = useMemo(() => {

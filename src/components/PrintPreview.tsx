@@ -230,7 +230,7 @@ export default function PrintPreview() {
           className={cn(
             "print-root mx-auto rounded-xl bg-white p-4 shadow-2xl transition-all duration-300 sm:p-6",
             pageOrientationClass,
-            tab === "checklist"
+            tab === "checklist" || tab === "handover"
               ? settings.checklistOrientation === "landscape"
                 ? "max-w-6xl"
                 : "max-w-4xl"
@@ -239,7 +239,7 @@ export default function PrintPreview() {
           style={
             tab === "pocket"
               ? undefined
-              : tab === "checklist"
+              : tab === "checklist" || tab === "handover"
                 ? {
                     aspectRatio:
                       settings.checklistOrientation === "landscape"
