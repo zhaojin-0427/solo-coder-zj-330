@@ -180,9 +180,107 @@ html[data-contrast="high"] .print-root .bg-amber-tint\/20,
 html[data-contrast="high"] .bg-amber-tint\/30,
 html[data-contrast="high"] .print-root .bg-amber-tint\/30,
 html[data-contrast="high"] .bg-amber-tint\/40,
-html[data-contrast="high"] .print-root .bg-amber-tint\/40 {
+html[data-contrast="high"] .bg-amber-tint\/20 {
   background-color: #fff3e0 !important;
   border-color: #e65100 !important;
+}
+
+/* 高对比模式 - 异常观察相关 */
+html[data-contrast="high"] .observation-card {
+  border-width: 3px !important;
+}
+
+html[data-contrast="high"] .bg-red-500 {
+  background-color: #c62828 !important;
+  color: #ffffff !important;
+  border-color: #c62828 !important;
+}
+
+html[data-contrast="high"] .text-red-500,
+html[data-contrast="high"] .text-red-600,
+html[data-contrast="high"] .text-red-700 {
+  color: #c62828 !important;
+  font-weight: 900 !important;
+}
+
+html[data-contrast="high"] .bg-green-100,
+html[data-contrast="high"] .bg-green-50 {
+  background-color: #e8f5e9 !important;
+  border-color: #2e7d32 !important;
+  border-width: 2px !important;
+}
+
+html[data-contrast="high"] .bg-red-50,
+html[data-contrast="high"] .bg-red-100 {
+  background-color: #ffebee !important;
+  border-color: #c62828 !important;
+  border-width: 2px !important;
+}
+
+html[data-contrast="high"] .bg-amber-50,
+html[data-contrast="high"] .bg-amber-100 {
+  background-color: #fff3e0 !important;
+  border-color: #e65100 !important;
+  border-width: 2px !important;
+}
+
+html[data-contrast="high"] .bg-blue-50,
+html[data-contrast="high"] .bg-blue-100 {
+  background-color: #e3f2fd !important;
+  border-color: #1565c0 !important;
+  border-width: 2px !important;
+}
+
+html[data-contrast="high"] .bg-purple-50,
+html[data-contrast="high"] .bg-purple-100 {
+  background-color: #f3e5f5 !important;
+  border-color: #6a1b9a !important;
+  border-width: 2px !important;
+}
+
+html[data-contrast="high"] .text-green-600,
+html[data-contrast="high"] .text-green-700,
+html[data-contrast="high"] .text-green-800 {
+  color: #2e7d32 !important;
+  font-weight: 900 !important;
+}
+
+html[data-contrast="high"] .text-blue-600,
+html[data-contrast="high"] .text-blue-700 {
+  color: #1565c0 !important;
+  font-weight: 900 !important;
+}
+
+html[data-contrast="high"] .text-purple-600,
+html[data-contrast="high"] .text-purple-700 {
+  color: #6a1b9a !important;
+  font-weight: 900 !important;
+}
+
+html[data-contrast="high"] .border-red-300,
+html[data-contrast="high"] .border-red-400,
+html[data-contrast="high"] .border-red-500 {
+  border-color: #c62828 !important;
+  border-width: 3px !important;
+}
+
+html[data-contrast="high"] .border-amber-300,
+html[data-contrast="high"] .border-amber-400 {
+  border-color: #e65100 !important;
+  border-width: 3px !important;
+}
+
+html[data-contrast="high"] .border-green-300,
+html[data-contrast="high"] .border-green-400 {
+  border-color: #2e7d32 !important;
+  border-width: 3px !important;
+}
+
+html[data-contrast="high"] .animate-pulse,
+html[data-contrast="high"] .animate-pulse-slow {
+  animation: none !important;
+  border-color: #c62828 !important;
+  border-width: 4px !important;
 }
 
 html[data-contrast="high"] .bg-orange-50,
@@ -285,6 +383,19 @@ html[data-contrast="high"] .border-orange-200 {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #c8821f;
+}
+
+/* 慢脉冲动画 */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+.animate-pulse-slow {
+  animation: pulse-slow 2s ease-in-out infinite;
 }
 
 /* 虚线裁切线（标签打印用） */
@@ -485,5 +596,49 @@ html[data-contrast="high"] .border-orange-200 {
 @media print {
   .print-hidden {
     display: none !important;
+  }
+
+  /* 就医摘要打印样式 */
+  .print-root .bg-red-500 {
+    background: #c62828 !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-root .bg-blue-50 {
+    background: #e3f2fd !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-root .bg-purple-100 {
+    background: #f3e5f5 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-root .text-purple-700 {
+    color: #6a1b9a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-root .bg-blue-100 {
+    background: #e3f2fd !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-root .text-blue-700 {
+    color: #1565c0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-root .border-4 {
+    border-width: 4px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

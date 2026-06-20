@@ -1,5 +1,5 @@
-import type { TimeSlot, Medicine, ChecklistCell, StockStatus } from "@/types";
-import { slotMeta, SLOT_LIST } from "@/lib/constants";
+import type { TimeSlot, Medicine, ChecklistCell, StockStatus, ObservationRecord, SeverityLevel } from "@/types";
+import { slotMeta, SLOT_LIST, symptomMeta, severityMeta, durationUnitMeta } from "@/lib/constants";
 
 interface SlotTheme {
   label: string;
@@ -325,3 +325,206 @@ export const STOCK_STATUS_META: Record<StockStatus, { label: string; bg: string;
     emoji: "❌",
   },
 };
+
+export interface ObservationComputed {
+  symptomLabels: string[];
+  symptomEmojis: string[];
+  severityMeta: ReturnType<typeof severityMeta>;
+  durationText: string;
+  dateText: string;
+  slotText: string;
+  isConsecutive: boolean;
+  consecutiveDays: number;
+}
+
+export function formatDuration(duration: { value: number; unit: string }): string {
+  const unitMeta = durationUnitMeta(duration.unit as any);
+  return `${duration.value} ${unitMeta.short}`;
+}
+
+export function formatSymptoms(symptomTypes: string[]): string {
+  return symptomTypes.map((s) => symptomMeta(s as any).label).join("、");
+}
+
+export function getSymptomEmojis(symptomTypes: string[]): string[] {
+  return symptomTypes.map((s) => symptomMeta(s as any).emoji);
+}
+
+export function getObservationRecordsByDateRange(
+  records: ObservationRecord[],
+  startDate: string,
+  days: number
+): ObservationRecord[] {
+  const dates = getDateRange(startDate, days);
+  return records.filter((r) => dates.includes(r.date));
+}
+
+export function groupObservationRecordsByDate(
+  records: ObservationRecord[]
+): Map<string, ObservationRecord[]> {
+  const map = new Map<string, ObservationRecord[]>();
+  for (const record of records) {
+    if (!map.has(record.date)) map.set(record.date, []);
+    map.get(record.date)!.push(record);
+  }
+  return map;
+}
+
+export function groupObservationRecordsByMedicine(
+  records: ObservationRecord[]
+): Map<string, ObservationRecord[]> {
+  const map = new Map<string, ObservationRecord[]>();
+  for (const record of records) {
+    if (!record.medicineId) continue;
+    if (!map.has(record.medicineId)) map.set(record.medicineId, []);
+    map.get(record.medicineId)!.push(record);
+  }
+  return map;
+}
+
+export function filterObservationRecords(
+  records: ObservationRecord[],
+  filters: {
+    date?: string;
+    medicineId?: string;
+    severity?: SeverityLevel;
+    startDate?: string;
+    endDate?: string;
+  }
+): ObservationRecord[] {
+  return records.filter((r) => {
+    if (filters.date && r.date !== filters.date) return false;
+    if (filters.medicineId && r.medicineId !== filters.medicineId) return false;
+    if (filters.severity && r.severity !== filters.severity) return false;
+    if (filters.startDate && r.date < filters.startDate) return false;
+    if (filters.endDate && r.date > filters.endDate) return false;
+    return true;
+  });
+}
+
+export function sortObservationRecords(
+  records: ObservationRecord[],
+  order: "asc" | "desc" = "desc"
+): ObservationRecord[] {
+  return [...records].sort((a, b) => {
+    const dateCompare = a.date.localeCompare(b.date);
+    if (dateCompare !== 0) return order === "desc" ? -dateCompare : dateCompare;
+    return order === "desc" ? b.createdAt - a.createdAt : a.createdAt - b.createdAt;
+  });
+}
+
+export function getSeverityWeight(severity: SeverityLevel): number {
+  switch (severity) {
+    case "mild": return 1;
+    case "moderate": return 2;
+    case "severe": return 3;
+    default: return 0;
+  }
+}
+
+export function getHighestSeverity(records: ObservationRecord[]): SeverityLevel | null {
+  if (records.length === 0) return null;
+  let highest: SeverityLevel = "mild";
+  for (const r of records) {
+    if (getSeverityWeight(r.severity) > getSeverityWeight(highest)) {
+      highest = r.severity;
+    }
+  }
+  return highest;
+}
+
+export function checkConsecutiveDays(
+  records: ObservationRecord[],
+  medicineId: string,
+  symptomType?: string
+): { isConsecutive: boolean; consecutiveDays: number; startDate: string | null } {
+  const filtered = records.filter(
+    (r) => r.medicineId === medicineId &&
+      (!symptomType || r.symptomTypes.includes(symptomType as any))
+  );
+  
+  if (filtered.length === 0) {
+    return { isConsecutive: false, consecutiveDays: 0, startDate: null };
+  }
+
+  const sortedDates = [...new Set(filtered.map((r) => r.date))].sort();
+  
+  let maxConsecutive = 1;
+  let currentConsecutive = 1;
+  let consecutiveStart = sortedDates[0];
+  let maxStart = sortedDates[0];
+
+  for (let i = 1; i < sortedDates.length; i++) {
+    const prev = new Date(sortedDates[i - 1]);
+    const curr = new Date(sortedDates[i]);
+    const diffDays = Math.round((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+      currentConsecutive++;
+      if (currentConsecutive > maxConsecutive) {
+        maxConsecutive = currentConsecutive;
+        maxStart = consecutiveStart;
+      }
+    } else {
+      currentConsecutive = 1;
+      consecutiveStart = sortedDates[i];
+    }
+  }
+
+  return {
+    isConsecutive: maxConsecutive >= 2,
+    consecutiveDays: maxConsecutive,
+    startDate: maxStart,
+  };
+}
+
+export function getObservationSummary(records: ObservationRecord[], medicines: Medicine[]) {
+  const totalRecords = records.length;
+  const severeCount = records.filter((r) => r.severity === "severe").length;
+  const moderateCount = records.filter((r) => r.severity === "moderate").length;
+  const mildCount = records.filter((r) => r.severity === "mild").length;
+  const consultedCount = records.filter((r) => r.consultedDoctor).length;
+  const stoppedCount = records.filter((r) => r.stoppedMedication).length;
+
+  const byMedicine: Array<{
+    medicineId: string;
+    medicineName: string;
+    recordCount: number;
+    highestSeverity: SeverityLevel | null;
+    consecutiveInfo: ReturnType<typeof checkConsecutiveDays>;
+    latestRecord: ObservationRecord | null;
+  }> = [];
+
+  for (const med of medicines) {
+    const medRecords = records.filter((r) => r.medicineId === med.id);
+    if (medRecords.length > 0) {
+      byMedicine.push({
+        medicineId: med.id,
+        medicineName: med.name,
+        recordCount: medRecords.length,
+        highestSeverity: getHighestSeverity(medRecords),
+        consecutiveInfo: checkConsecutiveDays(records, med.id),
+        latestRecord: sortObservationRecords(medRecords)[0],
+      });
+    }
+  }
+
+  const sortedRecords = sortObservationRecords(records);
+  const latestRecord = sortedRecords[0] || null;
+  const dateRange = sortedRecords.length > 0
+    ? { start: sortedRecords[sortedRecords.length - 1].date, end: sortedRecords[0].date }
+    : null;
+
+  return {
+    totalRecords,
+    severeCount,
+    moderateCount,
+    mildCount,
+    consultedCount,
+    stoppedCount,
+    byMedicine,
+    latestRecord,
+    dateRange,
+    hasHighRisk: severeCount > 0 || byMedicine.some((m) => m.consecutiveInfo.consecutiveDays >= 3),
+  };
+}

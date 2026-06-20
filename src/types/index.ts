@@ -4,6 +4,48 @@ export type MealRelation = "before" | "after" | "empty" | "any";
 
 export type PaperSize = "A4" | "A5" | "label";
 
+export type SymptomType =
+  | "dizziness"
+  | "nausea"
+  | "headache"
+  | "stomachache"
+  | "fatigue"
+  | "rash"
+  | "palpitation"
+  | "drowsiness"
+  | "insomnia"
+  | "constipation"
+  | "diarrhea"
+  | "dry_mouth"
+  | "appetite_loss"
+  | "weight_change"
+  | "other";
+
+export type SeverityLevel = "mild" | "moderate" | "severe";
+
+export type DurationUnit = "minutes" | "hours" | "days";
+
+export interface ObservationDuration {
+  value: number;
+  unit: DurationUnit;
+}
+
+export interface ObservationRecord {
+  id: string;
+  date: string;
+  timeSlot: TimeSlot | null;
+  medicineId: string | null;
+  symptomTypes: SymptomType[];
+  severity: SeverityLevel;
+  duration: ObservationDuration;
+  stoppedMedication: boolean;
+  consultedDoctor: boolean;
+  treatment: string;
+  notes: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export type FontSizeLevel = "large" | "xlarge" | "xxlarge";
 
 export type ChecklistGroupMode = "byDrug" | "byDate";
@@ -77,6 +119,7 @@ export interface Scheme {
   medicines: Medicine[];
   caregivers: Caregiver[];
   handoverRecords: HandoverRecord[];
+  observationRecords: ObservationRecord[];
   createdAt: number;
   updatedAt: number;
 }

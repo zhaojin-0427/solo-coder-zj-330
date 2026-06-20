@@ -11,6 +11,10 @@ import type {
   HandoverItemKey,
   Caregiver,
   HandoverRecord,
+  SymptomType,
+  SeverityLevel,
+  DurationUnit,
+  ObservationRecord,
 } from "@/types";
 
 export interface HandoverItemMeta {
@@ -67,6 +71,86 @@ export const PAPER_META: Record<
   label: { label: "标签纸", width: 595, height: 842, cols: 3, maxWidth: "max-w-3xl" },
 };
 
+export interface SymptomMeta {
+  key: SymptomType;
+  label: string;
+  emoji: string;
+}
+
+export const SYMPTOM_LIST: SymptomMeta[] = [
+  { key: "dizziness", label: "头晕", emoji: "💫" },
+  { key: "nausea", label: "恶心", emoji: "🤢" },
+  { key: "headache", label: "头痛", emoji: "🤕" },
+  { key: "stomachache", label: "腹痛", emoji: "🫄" },
+  { key: "fatigue", label: "乏力", emoji: "😮‍💨" },
+  { key: "rash", label: "皮疹", emoji: "🔴" },
+  { key: "palpitation", label: "心慌", emoji: "💓" },
+  { key: "drowsiness", label: "嗜睡", emoji: "😴" },
+  { key: "insomnia", label: "失眠", emoji: "🌙" },
+  { key: "constipation", label: "便秘", emoji: "🚫" },
+  { key: "diarrhea", label: "腹泻", emoji: "💧" },
+  { key: "dry_mouth", label: "口干", emoji: "👄" },
+  { key: "appetite_loss", label: "食欲减退", emoji: "🍽️" },
+  { key: "weight_change", label: "体重变化", emoji: "⚖️" },
+  { key: "other", label: "其他", emoji: "📝" },
+];
+
+export interface SeverityMeta {
+  key: SeverityLevel;
+  label: string;
+  emoji: string;
+  bg: string;
+  text: string;
+  border: string;
+  ring: string;
+  dot: string;
+}
+
+export const SEVERITY_LIST: SeverityMeta[] = [
+  {
+    key: "mild",
+    label: "轻微",
+    emoji: "🟢",
+    bg: "bg-green-50",
+    text: "text-green-700",
+    border: "border-green-300",
+    ring: "ring-green-200",
+    dot: "bg-green-500",
+  },
+  {
+    key: "moderate",
+    label: "中度",
+    emoji: "🟡",
+    bg: "bg-amber-50",
+    text: "text-amber-deep",
+    border: "border-amber-300",
+    ring: "ring-amber-200",
+    dot: "bg-amber",
+  },
+  {
+    key: "severe",
+    label: "严重",
+    emoji: "🔴",
+    bg: "bg-red-50",
+    text: "text-red-700",
+    border: "border-red-400",
+    ring: "ring-red-200",
+    dot: "bg-red-500",
+  },
+];
+
+export interface DurationUnitMeta {
+  key: DurationUnit;
+  label: string;
+  short: string;
+}
+
+export const DURATION_UNIT_LIST: DurationUnitMeta[] = [
+  { key: "minutes", label: "分钟", short: "分钟" },
+  { key: "hours", label: "小时", short: "小时" },
+  { key: "days", label: "天", short: "天" },
+];
+
 export const FONT_SIZE_LABEL: Record<FontSizeLevel, string> = {
   large: "大字",
   xlarge: "超大字",
@@ -83,6 +167,18 @@ export function mealMeta(key: MealRelation): MealMeta {
 
 export function handoverItemMeta(key: HandoverItemKey): HandoverItemMeta {
   return HANDOVER_ITEMS.find((h) => h.key === key) ?? HANDOVER_ITEMS[0];
+}
+
+export function symptomMeta(key: SymptomType): SymptomMeta {
+  return SYMPTOM_LIST.find((s) => s.key === key) ?? SYMPTOM_LIST[14];
+}
+
+export function severityMeta(key: SeverityLevel): SeverityMeta {
+  return SEVERITY_LIST.find((s) => s.key === key) ?? SEVERITY_LIST[0];
+}
+
+export function durationUnitMeta(key: DurationUnit): DurationUnitMeta {
+  return DURATION_UNIT_LIST.find((d) => d.key === key) ?? DURATION_UNIT_LIST[1];
 }
 
 export function uid(): string {
@@ -120,6 +216,62 @@ function getSampleExpiryDate(months: number): string {
   const d = new Date();
   d.setMonth(d.getMonth() + months);
   return d.toISOString().split("T")[0];
+}
+
+function getSampleObservationRecords(): ObservationRecord[] {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const twoDaysAgo = new Date(today);
+  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+  return [
+    {
+      id: "obs-1",
+      date: twoDaysAgo.toISOString().split("T")[0],
+      timeSlot: "morning",
+      medicineId: "m-1",
+      symptomTypes: ["dizziness", "fatigue"],
+      severity: "mild",
+      duration: { value: 2, unit: "hours" },
+      stoppedMedication: false,
+      consultedDoctor: false,
+      treatment: "躺下休息片刻后缓解",
+      notes: "服药后起身时感到轻微头晕，已提醒下次慢起",
+      createdAt: twoDaysAgo.getTime(),
+      updatedAt: twoDaysAgo.getTime(),
+    },
+    {
+      id: "obs-2",
+      date: yesterday.toISOString().split("T")[0],
+      timeSlot: "morning",
+      medicineId: "m-1",
+      symptomTypes: ["dizziness"],
+      severity: "mild",
+      duration: { value: 30, unit: "minutes" },
+      stoppedMedication: false,
+      consultedDoctor: false,
+      treatment: "坐著休息，喝了杯温水",
+      notes: "比前天情况好转，继续观察",
+      createdAt: yesterday.getTime(),
+      updatedAt: yesterday.getTime(),
+    },
+    {
+      id: "obs-3",
+      date: yesterday.toISOString().split("T")[0],
+      timeSlot: "evening",
+      medicineId: "m-2",
+      symptomTypes: ["nausea", "stomachache"],
+      severity: "moderate",
+      duration: { value: 1, unit: "hours" },
+      stoppedMedication: false,
+      consultedDoctor: true,
+      treatment: "饭后立即服用，喝些姜茶缓解",
+      notes: "昨天开始服用二甲双胍后胃部不适，已电话咨询社区医生，建议改为饭后立即服用",
+      createdAt: yesterday.getTime(),
+      updatedAt: yesterday.getTime(),
+    },
+  ];
 }
 
 export const SAMPLE_SCHEME: Scheme = {
@@ -227,6 +379,7 @@ export const SAMPLE_SCHEME: Scheme = {
   ],
   caregivers: SAMPLE_CAREGIVERS,
   handoverRecords: [],
+  observationRecords: getSampleObservationRecords(),
 };
 
 export const DEFAULT_SETTINGS = {

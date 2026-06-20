@@ -7,6 +7,8 @@ import {
   ListChecks,
   ClipboardList,
   ShoppingCart,
+  FileText,
+  HeartPulse,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PAPER_META } from "@/lib/constants";
@@ -16,6 +18,7 @@ import PocketCard from "@/components/PocketCard";
 import ChecklistView from "@/components/ChecklistView";
 import HandoverPrint from "@/components/HandoverPrint";
 import RefillPrint from "@/components/RefillPrint";
+import MedicalSummaryPrint from "@/components/MedicalSummaryPrint";
 import type { Medicine, PaperSize } from "@/types";
 
 function groupMedicines(medicines: Medicine[]): [string, Medicine[]][] {
@@ -34,19 +37,23 @@ export default function PrintPreview() {
   const medicines = useMedStore((s) => s.medicines);
   const caregivers = useMedStore((s) => s.caregivers);
   const handoverRecords = useMedStore((s) => s.handoverRecords);
+  const observationRecords = useMedStore((s) => s.observationRecords);
   const settings = useMedStore((s) => s.settings);
   const currentName = useMedStore((s) => s.currentName);
   const setPaper = useMedStore((s) => s.setPaper);
 
   const [tab, setTab] = useState<
-    "sticker" | "pocket" | "checklist" | "handover" | "refill"
+    "sticker" | "pocket" | "checklist" | "handover" | "refill" | "summary" | "summaryPocket"
   >("sticker");
 
   if (!open) return null;
 
   const isRefill = tab === "refill";
   const isChecklistOrHandover = tab === "checklist" || tab === "handover";
-  const activePaper = isRefill || isChecklistOrHandover ? PAPER_META.A4 : PAPER_META[settings.paperSize];
+  const isSummary = tab === "summary";
+  const isSummaryPocket = tab === "summaryPocket";
+  const isMedicalSummary = isSummary || isSummaryPocket;
+  const activePaper = isRefill || isChecklistOrHandover || isSummary ? PAPER_META.A4 : PAPER_META[settings.paperSize];
   const groups = groupMedicines(medicines);
 
   const pageOrientationClass =
@@ -70,15 +77,15 @@ export default function PrintPreview() {
         ? settings.checklistOrientation === "landscape"
           ? "size: A4 landscape;"
           : "size: A4 portrait;"
-        : tab === "refill"
-          ? "size: A4 portrait;"
+        : tab === "summaryPocket"
+          ? "size: A6 portrait;"
           : "size: A4 portrait;";
 
     styleEl.textContent = `
       @media print {
         @page {
           ${sizeRule}
-          margin: ${(tab === "checklist" || tab === "handover") && settings.checklistOrientation === "landscape" ? "10mm" : "12mm"};
+          margin: ${(tab === "checklist" || tab === "handover") && settings.checklistOrientation === "landscape" ? "10mm" : tab === "summaryPocket" ? "5mm" : "12mm"};
         }
       }
     `;
@@ -156,6 +163,29 @@ export default function PrintPreview() {
             >
               <ShoppingCart size={15} />
               补药清单
+            </button>
+            <div className="mx-1 h-5 w-px bg-white/20" />
+            <button
+              type="button"
+              onClick={() => setTab("summary")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-bold transition",
+                tab === "summary" ? "bg-red-500 text-white" : "text-white/80",
+              )}
+            >
+              <FileText size={15} />
+              就医摘要
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("summaryPocket")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-bold transition",
+                tab === "summaryPocket" ? "bg-red-500 text-white" : "text-white/80",
+              )}
+            >
+              <HeartPulse size={15} />
+              随身卡
             </button>
           </div>
         </div>
@@ -285,9 +315,13 @@ export default function PrintPreview() {
                       : "A4 纵向 · 交接清单"
                     : tab === "refill"
                       ? "A4 纵向 · 补药清单"
-                      : settings.checklistOrientation === "landscape"
-                        ? "A4 横向 · 服药核对清单"
-                        : "A4 纵向 · 服药核对清单"}
+                      : tab === "summary"
+                        ? "A4 纵向 · 就医沟通摘要"
+                        : tab === "summaryPocket"
+                          ? "随身卡 · 就医摘要卡"
+                          : settings.checklistOrientation === "landscape"
+                            ? "A4 横向 · 服药核对清单"
+                            : "A4 纵向 · 服药核对清单"}
             </span>
           </div>
 
@@ -347,6 +381,26 @@ export default function PrintPreview() {
               schemeName={currentName}
               caregivers={caregivers}
             />
+          ) : tab === "summary" ? (
+            <MedicalSummaryPrint
+              settings={settings}
+              medicines={medicines}
+              caregivers={caregivers}
+              observationRecords={observationRecords}
+              schemeName={currentName}
+              mode="full"
+            />
+          ) : tab === "summaryPocket" ? (
+            <div className="flex justify-center">
+              <MedicalSummaryPrint
+                settings={settings}
+                medicines={medicines}
+                caregivers={caregivers}
+                observationRecords={observationRecords}
+                schemeName={currentName}
+                mode="pocket"
+              />
+            </div>
           ) : (
             <ChecklistView medicines={medicines} settings={settings} />
           )}

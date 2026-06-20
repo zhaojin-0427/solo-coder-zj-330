@@ -12,6 +12,10 @@ import type {
   Caregiver,
   HandoverRecord,
   HandoverItemKey,
+  ObservationRecord,
+  SeverityLevel,
+  SymptomType,
+  DurationUnit,
 } from "@/types";
 import {
   DEFAULT_SETTINGS,
@@ -33,6 +37,7 @@ interface MedState {
   medicines: Medicine[];
   caregivers: Caregiver[];
   handoverRecords: HandoverRecord[];
+  observationRecords: ObservationRecord[];
   schemes: Scheme[];
   settings: Settings;
   currentName: string;
@@ -59,6 +64,12 @@ interface MedState {
   toggleHandoverItem: (date: string, slot: TimeSlot, item: HandoverItemKey) => void;
   setHandoverCaregiver: (date: string, slot: TimeSlot, caregiverId: string | null) => void;
   setHandoverNote: (date: string, slot: TimeSlot, note: string) => void;
+
+  addObservationRecord: (record: Omit<ObservationRecord, "id" | "createdAt" | "updatedAt">) => void;
+  updateObservationRecord: (id: string, patch: Partial<ObservationRecord>) => void;
+  removeObservationRecord: (id: string) => void;
+  getObservationRecordsByMedicine: (medicineId: string) => ObservationRecord[];
+  getObservationRecordsByDate: (date: string) => ObservationRecord[];
 
   newScheme: () => void;
   loadSample: () => void;
@@ -162,6 +173,7 @@ function migrateSchemeFields(s: Scheme): Scheme {
     ...s,
     caregivers: s.caregivers ?? [],
     handoverRecords: s.handoverRecords ?? [],
+    observationRecords: s.observationRecords ?? [],
     medicines: s.medicines.map(migrateMedicineFields),
   };
 }
@@ -181,12 +193,15 @@ const initialCaregivers =
   initialScheme?.caregivers ?? SAMPLE_SCHEME.caregivers;
 const initialHandoverRecords =
   initialScheme?.handoverRecords ?? SAMPLE_SCHEME.handoverRecords;
+const initialObservationRecords =
+  initialScheme?.observationRecords ?? SAMPLE_SCHEME.observationRecords;
 const initialName = initialScheme?.name ?? "新建方案";
 
 export const useMedStore = create<MedState>((set, get) => ({
   medicines: initialMedicines,
   caregivers: initialCaregivers,
   handoverRecords: initialHandoverRecords,
+  observationRecords: initialObservationRecords,
   schemes: persistedSchemes,
   settings: initialSettings,
   currentName: initialName,
@@ -327,11 +342,50 @@ export const useMedStore = create<MedState>((set, get) => ({
     get().updateHandoverRecord(date, slot, { note });
   },
 
+  addObservationRecord: (record) => {
+    const now = Date.now();
+    const newRecord: ObservationRecord = {
+      ...record,
+      id: uid(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    set((s) => ({
+      observationRecords: [...s.observationRecords, newRecord],
+      dirty: true,
+    }));
+  },
+
+  updateObservationRecord: (id, patch) => {
+    set((s) => ({
+      observationRecords: s.observationRecords.map((r) =>
+        r.id === id ? { ...r, ...patch, updatedAt: Date.now() } : r,
+      ),
+      dirty: true,
+    }));
+  },
+
+  removeObservationRecord: (id) => {
+    set((s) => ({
+      observationRecords: s.observationRecords.filter((r) => r.id !== id),
+      dirty: true,
+    }));
+  },
+
+  getObservationRecordsByMedicine: (medicineId) => {
+    return get().observationRecords.filter((r) => r.medicineId === medicineId);
+  },
+
+  getObservationRecordsByDate: (date) => {
+    return get().observationRecords.filter((r) => r.date === date);
+  },
+
   newScheme: () => {
     set({
       medicines: [createEmptyMedicine()],
       caregivers: [],
       handoverRecords: [],
+      observationRecords: [],
       currentName: "新建方案",
       dirty: true,
     });
@@ -345,6 +399,7 @@ export const useMedStore = create<MedState>((set, get) => ({
       ),
       caregivers: SAMPLE_SCHEME.caregivers.map((c) => ({ ...c, id: uid() })),
       handoverRecords: [],
+      observationRecords: SAMPLE_SCHEME.observationRecords.map((o) => ({ ...o, id: uid() })),
       currentName: SAMPLE_SCHEME.name,
       dirty: true,
     });
@@ -367,6 +422,7 @@ export const useMedStore = create<MedState>((set, get) => ({
               medicines: state.medicines,
               caregivers: state.caregivers,
               handoverRecords: state.handoverRecords,
+              observationRecords: state.observationRecords,
               updatedAt: now,
             }
           : s,
@@ -380,6 +436,7 @@ export const useMedStore = create<MedState>((set, get) => ({
           medicines: state.medicines,
           caregivers: state.caregivers,
           handoverRecords: state.handoverRecords,
+          observationRecords: state.observationRecords,
           createdAt: now,
           updatedAt: now,
         },
@@ -397,6 +454,7 @@ export const useMedStore = create<MedState>((set, get) => ({
       medicines: migrated.medicines.map((m) => ({ ...m })),
       caregivers: migrated.caregivers.map((c) => ({ ...c })),
       handoverRecords: migrated.handoverRecords.map((r) => ({ ...r })),
+      observationRecords: migrated.observationRecords.map((r) => ({ ...r })),
       currentName: migrated.name,
       dirty: false,
     });
