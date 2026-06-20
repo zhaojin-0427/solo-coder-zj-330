@@ -169,6 +169,101 @@ html[data-contrast="high"] .print-root table th.bg-evening {
   color: #ffffff !important;
 }
 
+html[data-contrast="high"] .bg-red-50,
+html[data-contrast="high"] .print-root .bg-red-50 {
+  background-color: #ffebee !important;
+  border-color: #c62828 !important;
+}
+
+html[data-contrast="high"] .bg-amber-tint\/20,
+html[data-contrast="high"] .print-root .bg-amber-tint\/20,
+html[data-contrast="high"] .bg-amber-tint\/30,
+html[data-contrast="high"] .print-root .bg-amber-tint\/30,
+html[data-contrast="high"] .bg-amber-tint\/40,
+html[data-contrast="high"] .print-root .bg-amber-tint\/40 {
+  background-color: #fff3e0 !important;
+  border-color: #e65100 !important;
+}
+
+html[data-contrast="high"] .bg-orange-50,
+html[data-contrast="high"] .print-root .bg-orange-50 {
+  background-color: #fff3e0 !important;
+  border-color: #e65100 !important;
+}
+
+html[data-contrast="high"] .bg-red-100,
+html[data-contrast="high"] .print-root .bg-red-100 {
+  background-color: #ffcdd2 !important;
+  border-color: #c62828 !important;
+}
+
+html[data-contrast="high"] .text-amber-deep,
+html[data-contrast="high"] .print-root .text-amber-deep {
+  color: #e65100 !important;
+  font-weight: 900 !important;
+}
+
+html[data-contrast="high"] .text-orange-500,
+html[data-contrast="high"] .text-orange-600,
+html[data-contrast="high"] .print-root .text-orange-500,
+html[data-contrast="high"] .print-root .text-orange-600 {
+  color: #e65100 !important;
+  font-weight: 900 !important;
+}
+
+html[data-contrast="high"] .bg-red-500,
+html[data-contrast="high"] .print-root .bg-red-500,
+html[data-contrast="high"] .bg-red-700,
+html[data-contrast="high"] .print-root .bg-red-700 {
+  background-color: #c62828 !important;
+  color: #ffffff !important;
+}
+
+html[data-contrast="high"] .bg-orange-500,
+html[data-contrast="high"] .print-root .bg-orange-500 {
+  background-color: #e65100 !important;
+  color: #ffffff !important;
+}
+
+html[data-contrast="high"] .bg-amber,
+html[data-contrast="high"] .print-root .bg-amber {
+  background-color: #e65100 !important;
+  color: #ffffff !important;
+}
+
+html[data-contrast="high"] .bg-green-50\/40,
+html[data-contrast="high"] .bg-green-50\/60,
+html[data-contrast="high"] .bg-green-50\/70 {
+  background-color: #e8f5e9 !important;
+  border-color: #2e7d32 !important;
+}
+
+html[data-contrast="high"] .bg-amber-tint\/20 {
+  background-color: #fff3e0 !important;
+}
+
+html[data-contrast="high"] .border-red-200,
+html[data-contrast="high"] .border-red-300 {
+  border-color: #c62828 !important;
+  border-width: 2px !important;
+}
+
+html[data-contrast="high"] .border-amber-soft {
+  border-color: #e65100 !important;
+  border-width: 2px !important;
+}
+
+html[data-contrast="high"] .border-green-200,
+html[data-contrast="high"] .border-green-600 {
+  border-color: #2e7d32 !important;
+  border-width: 2px !important;
+}
+
+html[data-contrast="high"] .border-orange-200 {
+  border-color: #e65100 !important;
+  border-width: 2px !important;
+}
+
 /* 焦点可见 */
 :focus-visible {
   outline: 3px solid #e8a33d;
@@ -293,6 +388,94 @@ html[data-contrast="high"] .print-root table th.bg-evening {
   }
   .print-root .animate-pulse {
     animation: none !important;
+  }
+  .print-root .bg-orange-50 {
+    background: #fff3e0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .bg-orange-500 {
+    background: #ef6c00 !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .bg-amber {
+    background: #e8a33d !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .bg-amber-soft\/30,
+  .print-root .bg-amber-tint\/20,
+  .print-root .bg-amber-tint\/30,
+  .print-root .bg-amber-tint\/40 {
+    background: #fef3c7 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .bg-red-500 {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .bg-red-700 {
+    background: #b91c1c !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .bg-red-100 {
+    background: #fee2e2 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .bg-green-50,
+  .print-root .bg-green-50\/40,
+  .print-root .bg-green-50\/60 {
+    background: #e8f5e9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .bg-green-600 {
+    background: #16a34a !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .text-orange-500,
+  .print-root .text-orange-600 {
+    color: #ea580c !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .text-red-600,
+  .print-root .text-red-700 {
+    color: #dc2626 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .text-green-600,
+  .print-root .text-green-700,
+  .print-root .text-green-800 {
+    color: #16a34a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .text-amber-deep {
+    color: #c8821f !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-root .border-red-200,
+  .print-root .border-red-300,
+  .print-root .border-orange-200,
+  .print-root .border-amber-soft,
+  .print-root .border-green-200 {
+    border-width: 2px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 

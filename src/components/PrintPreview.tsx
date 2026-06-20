@@ -6,6 +6,7 @@ import {
   CreditCard,
   ListChecks,
   ClipboardList,
+  ShoppingCart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PAPER_META } from "@/lib/constants";
@@ -14,6 +15,7 @@ import StickerLabel from "@/components/StickerLabel";
 import PocketCard from "@/components/PocketCard";
 import ChecklistView from "@/components/ChecklistView";
 import HandoverPrint from "@/components/HandoverPrint";
+import RefillPrint from "@/components/RefillPrint";
 import type { Medicine, PaperSize } from "@/types";
 
 function groupMedicines(medicines: Medicine[]): [string, Medicine[]][] {
@@ -37,7 +39,7 @@ export default function PrintPreview() {
   const setPaper = useMedStore((s) => s.setPaper);
 
   const [tab, setTab] = useState<
-    "sticker" | "pocket" | "checklist" | "handover"
+    "sticker" | "pocket" | "checklist" | "handover" | "refill"
   >("sticker");
 
   if (!open) return null;
@@ -66,7 +68,9 @@ export default function PrintPreview() {
         ? settings.checklistOrientation === "landscape"
           ? "size: A4 landscape;"
           : "size: A4 portrait;"
-        : "size: A4 portrait;";
+        : tab === "refill"
+          ? "size: A4 portrait;"
+          : "size: A4 portrait;";
 
     styleEl.textContent = `
       @media print {
@@ -139,6 +143,17 @@ export default function PrintPreview() {
             >
               <ClipboardList size={15} />
               交接清单
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("refill")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-bold transition",
+                tab === "refill" ? "bg-amber text-zinc-900" : "text-white/80",
+              )}
+            >
+              <ShoppingCart size={15} />
+              补药清单
             </button>
           </div>
         </div>
@@ -234,19 +249,23 @@ export default function PrintPreview() {
               ? settings.checklistOrientation === "landscape"
                 ? "max-w-6xl"
                 : "max-w-4xl"
-              : paper.maxWidth,
+              : tab === "refill"
+                ? "max-w-4xl"
+                : paper.maxWidth,
           )}
           style={
             tab === "pocket"
               ? undefined
-              : tab === "checklist" || tab === "handover"
-                ? {
-                    aspectRatio:
-                      settings.checklistOrientation === "landscape"
-                        ? `${paper.height} / ${paper.width}`
-                        : `${paper.width} / ${paper.height}`,
-                  }
-                : { aspectRatio: `${paper.width} / ${paper.height}` }
+              : tab === "refill"
+                ? { aspectRatio: `${paper.width} / ${paper.height}` }
+                : tab === "checklist" || tab === "handover"
+                  ? {
+                      aspectRatio:
+                        settings.checklistOrientation === "landscape"
+                          ? `${paper.height} / ${paper.width}`
+                          : `${paper.width} / ${paper.height}`,
+                    }
+                  : { aspectRatio: `${paper.width} / ${paper.height}` }
           }
         >
           <div className="mb-4 flex items-center justify-between border-b border-paper-line pb-2 print:hidden">
@@ -262,9 +281,11 @@ export default function PrintPreview() {
                     ? settings.checklistOrientation === "landscape"
                       ? "A4 横向 · 交接清单"
                       : "A4 纵向 · 交接清单"
-                    : settings.checklistOrientation === "landscape"
-                      ? "A4 横向 · 服药核对清单"
-                      : "A4 纵向 · 服药核对清单"}
+                    : tab === "refill"
+                      ? "A4 纵向 · 补药清单"
+                      : settings.checklistOrientation === "landscape"
+                        ? "A4 横向 · 服药核对清单"
+                        : "A4 纵向 · 服药核对清单"}
             </span>
           </div>
 
@@ -316,6 +337,13 @@ export default function PrintPreview() {
               caregivers={caregivers}
               handoverRecords={handoverRecords}
               schemeName={currentName}
+            />
+          ) : tab === "refill" ? (
+            <RefillPrint
+              settings={settings}
+              medicines={medicines}
+              schemeName={currentName}
+              caregivers={caregivers}
             />
           ) : (
             <ChecklistView medicines={medicines} settings={settings} />

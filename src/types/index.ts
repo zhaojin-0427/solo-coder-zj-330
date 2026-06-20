@@ -16,6 +16,18 @@ export type HandoverItemKey =
   | "observed"
   | "contacted";
 
+export type StockStatus = "normal" | "low" | "critical" | "expiring" | "expired";
+
+export interface StockInfo {
+  stockQuantity: number;
+  singleDoseUnit: string;
+  packageSpec: string;
+  refillThreshold: number;
+  purchaseLocation: string;
+  purchaseContact: string;
+  expiryDate: string;
+}
+
 export interface Caregiver {
   id: string;
   name: string;
@@ -47,6 +59,14 @@ export interface Medicine {
   courseDays: number;
   enableChecklist: boolean;
   completedSlots: Record<string, TimeSlot[]>;
+  stockQuantity: number;
+  singleDoseUnit: string;
+  packageSpec: string;
+  refillThreshold: number;
+  purchaseLocation: string;
+  purchaseContact: string;
+  expiryDate: string;
+  enableStock: boolean;
 }
 
 export interface Scheme {

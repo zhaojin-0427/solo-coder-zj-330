@@ -6,6 +6,7 @@ import {
   formatDate,
   getDayOfWeek,
   isDateInCourse,
+  computeStockStatus,
 } from "@/lib/format";
 import { useMedStore } from "@/store/useMedStore";
 import type {
@@ -69,6 +70,26 @@ export default function PocketCard({
     }
     return map;
   }, [todayChecklist]);
+
+  const refillSummary = useMemo(() => {
+    const items: { name: string; status: "critical" | "low" | "expiring" | "expired" }[] = [];
+    for (const m of medicines) {
+      if (!m.enableStock) continue;
+      const computed = computeStockStatus(m);
+      if (computed.needRefill) {
+        if (computed.isCritical || computed.isExpired) {
+          items.push({ name: m.name, status: computed.isExpired ? "expired" : "critical" });
+        } else if (computed.isLow) {
+          items.push({ name: m.name, status: "low" });
+        } else if (computed.isExpiring) {
+          items.push({ name: m.name, status: "expiring" });
+        }
+      }
+    }
+    return items.slice(0, 6);
+  }, [medicines]);
+
+  const hasRefillItems = refillSummary.length > 0;
 
   return (
     <div className="paper-surface mx-auto w-full max-w-md overflow-hidden rounded-2xl border-2 border-paper-ink bg-white shadow-sticker print-shadow-none">
@@ -271,6 +292,37 @@ export default function PocketCard({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {hasRefillItems && (
+        <div className="border-t-2 border-dashed border-paper-line bg-red-50 px-3 py-2">
+          <p className="mb-1 text-[0.6rem] font-bold uppercase tracking-wider text-red-600">
+            📌 近期需补药
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {refillSummary.map((item) => (
+              <span
+                key={item.name}
+                className={cn(
+                  "rounded px-1.5 py-0.5 text-[0.65rem] font-black text-white",
+                  item.status === "critical"
+                    ? "bg-red-500"
+                    : item.status === "expired"
+                      ? "bg-red-700"
+                      : item.status === "low"
+                        ? "bg-amber"
+                        : "bg-orange-500",
+                )}
+              >
+                {item.name}
+                {item.status === "expired" && "（弃）"}
+              </span>
+            ))}
+          </div>
+          <p className="mt-1 text-[0.55rem] font-bold text-paper-muted">
+            详见「补药清单」打印页
+          </p>
         </div>
       )}
     </div>

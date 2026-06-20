@@ -79,6 +79,8 @@ interface MedState {
 
 function createEmptyMedicine(): Medicine {
   const today = new Date().toISOString().split("T")[0];
+  const nextYear = new Date();
+  nextYear.setFullYear(nextYear.getFullYear() + 1);
   return {
     id: uid(),
     name: "",
@@ -92,6 +94,14 @@ function createEmptyMedicine(): Medicine {
     courseDays: 7,
     enableChecklist: true,
     completedSlots: {},
+    stockQuantity: 0,
+    singleDoseUnit: "片",
+    packageSpec: "",
+    refillThreshold: 7,
+    purchaseLocation: "",
+    purchaseContact: "",
+    expiryDate: nextYear.toISOString().split("T")[0],
+    enableStock: false,
   };
 }
 
@@ -123,12 +133,22 @@ function applySettingsToDom(settings: Settings): void {
 
 function migrateMedicineFields(m: Medicine): Medicine {
   const today = new Date().toISOString().split("T")[0];
+  const nextYear = new Date();
+  nextYear.setFullYear(nextYear.getFullYear() + 1);
   return {
     ...m,
     startDate: m.startDate ?? today,
     courseDays: m.courseDays ?? 7,
     enableChecklist: m.enableChecklist ?? true,
     completedSlots: m.completedSlots ?? {},
+    stockQuantity: m.stockQuantity ?? 0,
+    singleDoseUnit: m.singleDoseUnit ?? "片",
+    packageSpec: m.packageSpec ?? "",
+    refillThreshold: m.refillThreshold ?? 7,
+    purchaseLocation: m.purchaseLocation ?? "",
+    purchaseContact: m.purchaseContact ?? "",
+    expiryDate: m.expiryDate ?? nextYear.toISOString().split("T")[0],
+    enableStock: m.enableStock ?? false,
   };
 }
 

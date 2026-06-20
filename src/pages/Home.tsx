@@ -5,6 +5,7 @@ import {
   Clock,
   Users,
   ClipboardCheck,
+  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
@@ -13,12 +14,13 @@ import CaregiverManager from "@/components/CaregiverManager";
 import LabelCanvas from "@/components/LabelCanvas";
 import TimeCardPanel from "@/components/TimeCardPanel";
 import HandoverPanel from "@/components/HandoverPanel";
+import InventoryPanel from "@/components/InventoryPanel";
 import PrintPreview from "@/components/PrintPreview";
 import SchemeDrawer from "@/components/SchemeDrawer";
 
-type MobileTab = "input" | "caregiver" | "canvas" | "slots" | "handover";
+type MobileTab = "input" | "caregiver" | "canvas" | "slots" | "handover" | "inventory";
 type LeftTab = "input" | "caregiver";
-type RightTab = "slots" | "handover";
+type RightTab = "slots" | "handover" | "inventory";
 
 const MOBILE_TABS: { key: MobileTab; label: string; icon: typeof Layers }[] = [
   { key: "input", label: "录入", icon: PencilRuler },
@@ -26,6 +28,7 @@ const MOBILE_TABS: { key: MobileTab; label: string; icon: typeof Layers }[] = [
   { key: "canvas", label: "标签", icon: Layers },
   { key: "slots", label: "时段卡", icon: Clock },
   { key: "handover", label: "交接", icon: ClipboardCheck },
+  { key: "inventory", label: "库存", icon: Package },
 ];
 
 export default function Home() {
@@ -98,6 +101,19 @@ export default function Home() {
             </button>
             <button
               type="button"
+              onClick={() => setRightTab("inventory")}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-bold transition",
+                rightTab === "inventory"
+                  ? "text-amber-deep border-b-2 border-amber-deep -mb-px"
+                  : "text-paper-muted hover:text-paper-ink",
+              )}
+            >
+              <Package size={16} />
+              库存
+            </button>
+            <button
+              type="button"
               onClick={() => setRightTab("handover")}
               className={cn(
                 "flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-bold transition",
@@ -111,7 +127,13 @@ export default function Home() {
             </button>
           </div>
           <div className="min-h-0 flex-1 overflow-hidden">
-            {rightTab === "slots" ? <TimeCardPanel /> : <HandoverPanel />}
+            {rightTab === "slots" ? (
+              <TimeCardPanel />
+            ) : rightTab === "inventory" ? (
+              <InventoryPanel />
+            ) : (
+              <HandoverPanel />
+            )}
           </div>
         </div>
 
@@ -146,6 +168,14 @@ export default function Home() {
           )}
         >
           <HandoverPanel />
+        </div>
+        <div
+          className={cn(
+            "h-full min-h-0 flex-1 overflow-hidden lg:hidden",
+            mobileTab === "inventory" ? "block" : "hidden",
+          )}
+        >
+          <InventoryPanel />
         </div>
       </div>
 

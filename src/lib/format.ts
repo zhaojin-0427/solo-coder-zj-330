@@ -1,4 +1,4 @@
-import type { TimeSlot, Medicine, ChecklistCell } from "@/types";
+import type { TimeSlot, Medicine, ChecklistCell, StockStatus } from "@/types";
 import { slotMeta, SLOT_LIST } from "@/lib/constants";
 
 interface SlotTheme {
@@ -171,3 +171,132 @@ export function getWeekDates(referenceDate?: string): string[] {
 export function getMissedCount(cells: ChecklistCell[]): number {
   return cells.filter((c) => c.isMissed).length;
 }
+
+export interface StockComputed {
+  dailyConsumption: number;
+  remainingDays: number;
+  stockStatus: StockStatus;
+  daysToExpiry: number;
+  isExpiring: boolean;
+  isExpired: boolean;
+  isCritical: boolean;
+  isLow: boolean;
+  isNormal: boolean;
+  needRefill: boolean;
+}
+
+export function parseSingleDoseAmount(dosage: string): number {
+  if (!dosage) return 1;
+  const match = dosage.match(/(\d+(?:\.\d+)?)/);
+  if (match) {
+    const val = parseFloat(match[1]);
+    if (val > 0) return val;
+  }
+  return 1;
+}
+
+export function computeDailyConsumption(medicine: Medicine): number {
+  const slotsPerDay = medicine.slots.length;
+  const singleDose = parseSingleDoseAmount(medicine.dosage);
+  return slotsPerDay * singleDose;
+}
+
+export function computeRemainingDays(medicine: Medicine): number {
+  if (!medicine.enableStock) return -1;
+  const daily = computeDailyConsumption(medicine);
+  if (daily <= 0) return -1;
+  const stock = medicine.stockQuantity || 0;
+  return Math.floor(stock / daily);
+}
+
+export function getDaysToExpiry(expiryDate: string): number {
+  if (!expiryDate) return 9999;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(expiryDate);
+  expiry.setHours(0, 0, 0, 0);
+  const diffMs = expiry.getTime() - today.getTime();
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+}
+
+export function computeStockStatus(medicine: Medicine): StockComputed {
+  const dailyConsumption = computeDailyConsumption(medicine);
+  const remainingDays = computeRemainingDays(medicine);
+  const daysToExpiry = getDaysToExpiry(medicine.expiryDate);
+
+  const isExpired = daysToExpiry < 0;
+  const isExpiring = daysToExpiry >= 0 && daysToExpiry <= 30;
+
+  let stockStatus: StockStatus;
+  if (!medicine.enableStock) {
+    stockStatus = "normal";
+  } else if (isExpired) {
+    stockStatus = "expired";
+  } else if (remainingDays < 0) {
+    stockStatus = "normal";
+  } else if (remainingDays <= 0) {
+    stockStatus = "critical";
+  } else if (remainingDays <= (medicine.refillThreshold || 7)) {
+    stockStatus = "low";
+  } else if (isExpiring && remainingDays > (medicine.refillThreshold || 7)) {
+    stockStatus = "expiring";
+  } else {
+    stockStatus = "normal";
+  }
+
+  return {
+    dailyConsumption,
+    remainingDays,
+    stockStatus,
+    daysToExpiry,
+    isExpiring,
+    isExpired,
+    isCritical: stockStatus === "critical",
+    isLow: stockStatus === "low",
+    isNormal: stockStatus === "normal",
+    needRefill: stockStatus === "critical" || stockStatus === "low" || stockStatus === "expired" || stockStatus === "expiring",
+  };
+}
+
+export const STOCK_STATUS_META: Record<StockStatus, { label: string; bg: string; text: string; ring: string; dot: string; emoji: string }> = {
+  normal: {
+    label: "库存正常",
+    bg: "bg-green-50",
+    text: "text-green-700",
+    ring: "ring-green-200",
+    dot: "bg-green-500",
+    emoji: "✅",
+  },
+  low: {
+    label: "即将不足",
+    bg: "bg-amber-50",
+    text: "text-amber-deep",
+    ring: "ring-amber-soft",
+    dot: "bg-amber",
+    emoji: "⚠️",
+  },
+  critical: {
+    label: "库存不足",
+    bg: "bg-red-50",
+    text: "text-red-600",
+    ring: "ring-red-200",
+    dot: "bg-red-500",
+    emoji: "🚨",
+  },
+  expiring: {
+    label: "临近过期",
+    bg: "bg-orange-50",
+    text: "text-orange-600",
+    ring: "ring-orange-200",
+    dot: "bg-orange-500",
+    emoji: "📅",
+  },
+  expired: {
+    label: "已过期",
+    bg: "bg-red-100",
+    text: "text-red-700",
+    ring: "ring-red-300",
+    dot: "bg-red-600",
+    emoji: "❌",
+  },
+};

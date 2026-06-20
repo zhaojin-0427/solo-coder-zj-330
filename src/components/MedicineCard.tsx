@@ -1,4 +1,4 @@
-import { ChevronUp, ChevronDown, Trash2, Calendar, RotateCcw } from "lucide-react";
+import { ChevronUp, ChevronDown, Trash2, Calendar, RotateCcw, Package, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   FREQUENCY_PRESETS,
@@ -6,7 +6,7 @@ import {
   MEAL_LIST,
   SLOT_LIST,
 } from "@/lib/constants";
-import { slotTheme, formatDate } from "@/lib/format";
+import { slotTheme, formatDate, computeStockStatus, STOCK_STATUS_META, getDaysToExpiry } from "@/lib/format";
 import { useMedStore } from "@/store/useMedStore";
 import type { Medicine } from "@/types";
 
@@ -302,6 +302,200 @@ export default function MedicineCard({
               </button>
             </div>
           </div>
+        )}
+      </div>
+
+      <div className="mt-3 rounded-xl border-2 border-green-200 bg-green-50/40 p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Package size={16} className="text-green-700" />
+            <span className="text-sm font-black text-green-700">库存与补药提醒</span>
+          </div>
+          <label className="inline-flex cursor-pointer items-center gap-2">
+            <span className="text-xs font-bold text-paper-muted">启用库存</span>
+            <span className="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full bg-paper-line transition-colors duration-200 ease-in-out focus:outline-none">
+              <input
+                type="checkbox"
+                checked={medicine.enableStock}
+                onChange={(e) =>
+                  updateMedicine(medicine.id, { enableStock: e.target.checked })
+                }
+                className="peer sr-only"
+              />
+              <span
+                className={cn(
+                  "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                  medicine.enableStock ? "translate-x-5" : "translate-x-0.5",
+                )}
+              />
+              <span
+                className={cn(
+                  "absolute inset-0 rounded-full transition-colors duration-200",
+                  medicine.enableStock ? "bg-green-600" : "bg-paper-line",
+                )}
+              />
+            </span>
+          </label>
+        </div>
+
+        {medicine.enableStock && (
+          (() => {
+            const computed = computeStockStatus(medicine);
+            const statusMeta = STOCK_STATUS_META[computed.stockStatus];
+            return (
+              <div className="space-y-3">
+                <div className={cn("flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 ring-1", statusMeta.ring)}>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("h-2.5 w-2.5 rounded-full", statusMeta.dot)} />
+                    <span className={cn("text-sm font-black", statusMeta.text)}>
+                      {showIcons && <span className="mr-1" aria-hidden>{statusMeta.emoji}</span>}
+                      {statusMeta.label}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    {computed.remainingDays >= 0 && (
+                      <p className="text-xs font-bold text-paper-ink">
+                        可用 <span className="text-base text-amber-deep">{computed.remainingDays}</span> 天
+                      </p>
+                    )}
+                    {computed.daysToExpiry <= 30 && computed.daysToExpiry >= 0 && (
+                      <p className="text-[0.7rem] font-bold text-orange-600">
+                        距过期 {computed.daysToExpiry} 天
+                      </p>
+                    )}
+                    {computed.daysToExpiry < 0 && (
+                      <p className="text-[0.7rem] font-bold text-red-600">
+                        已过期 {Math.abs(computed.daysToExpiry)} 天
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-paper-muted">
+                      当前库存数量
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={medicine.stockQuantity}
+                      onChange={(e) =>
+                        updateMedicine(medicine.id, {
+                          stockQuantity: Math.max(0, parseFloat(e.target.value) || 0),
+                        })
+                      }
+                      className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-paper-muted">
+                      单位（片/粒/毫升）
+                    </label>
+                    <input
+                      type="text"
+                      value={medicine.singleDoseUnit}
+                      onChange={(e) =>
+                        updateMedicine(medicine.id, { singleDoseUnit: e.target.value })
+                      }
+                      placeholder="片/粒/袋"
+                      className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-paper-muted">
+                      包装规格
+                    </label>
+                    <input
+                      type="text"
+                      value={medicine.packageSpec}
+                      onChange={(e) =>
+                        updateMedicine(medicine.id, { packageSpec: e.target.value })
+                      }
+                      placeholder="每盒 30 片"
+                      className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-paper-muted">
+                      补药阈值（剩余≤N天提醒）
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="90"
+                      value={medicine.refillThreshold}
+                      onChange={(e) =>
+                        updateMedicine(medicine.id, {
+                          refillThreshold: Math.max(1, parseInt(e.target.value) || 7),
+                        })
+                      }
+                      className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-paper-muted">
+                    有效期至
+                  </label>
+                  <input
+                    type="date"
+                    value={medicine.expiryDate}
+                    onChange={(e) =>
+                      updateMedicine(medicine.id, { expiryDate: e.target.value })
+                    }
+                    className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 flex items-center gap-1 text-xs font-bold text-paper-muted">
+                    <MapPin size={12} />
+                    购药地点
+                  </label>
+                  <input
+                    type="text"
+                    value={medicine.purchaseLocation}
+                    onChange={(e) =>
+                      updateMedicine(medicine.id, { purchaseLocation: e.target.value })
+                    }
+                    placeholder="例如：市人民医院门诊药房 / 京东健康"
+                    className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-paper-muted">
+                    联系方式
+                  </label>
+                  <input
+                    type="text"
+                    value={medicine.purchaseContact}
+                    onChange={(e) =>
+                      updateMedicine(medicine.id, { purchaseContact: e.target.value })
+                    }
+                    placeholder="药房电话 / 线上购药链接"
+                    className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg bg-white/70 px-2 py-1.5">
+                  <div className="text-xs">
+                    <span className="font-bold text-paper-ink">每日消耗：</span>
+                    <span className="text-paper-muted">
+                      约 {computed.dailyConsumption} {medicine.singleDoseUnit || "片"}
+                      （{medicine.slots.length} 次/日 × 单次剂量）
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()
         )}
       </div>
     </div>

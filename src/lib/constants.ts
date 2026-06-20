@@ -116,6 +116,12 @@ export const SAMPLE_CAREGIVERS: Caregiver[] = [
   },
 ];
 
+function getSampleExpiryDate(months: number): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().split("T")[0];
+}
+
 export const SAMPLE_SCHEME: Scheme = {
   id: "sample-001",
   name: "爷爷的日常用药",
@@ -135,6 +141,14 @@ export const SAMPLE_SCHEME: Scheme = {
       courseDays: 30,
       enableChecklist: true,
       completedSlots: {},
+      stockQuantity: 8,
+      singleDoseUnit: "片",
+      packageSpec: "每盒 30 片（5mg/片）",
+      refillThreshold: 10,
+      purchaseLocation: "社区卫生服务中心 / 同济堂大药房",
+      purchaseContact: "社区医院：027-8888-1111",
+      expiryDate: getSampleExpiryDate(14),
+      enableStock: true,
     },
     {
       id: "m-2",
@@ -149,6 +163,14 @@ export const SAMPLE_SCHEME: Scheme = {
       courseDays: 30,
       enableChecklist: true,
       completedSlots: {},
+      stockQuantity: 52,
+      singleDoseUnit: "片",
+      packageSpec: "每盒 60 片（500mg/片）",
+      refillThreshold: 15,
+      purchaseLocation: "市人民医院门诊药房",
+      purchaseContact: "慢病门诊：027-8888-2222",
+      expiryDate: getSampleExpiryDate(8),
+      enableStock: true,
     },
     {
       id: "m-3",
@@ -163,6 +185,14 @@ export const SAMPLE_SCHEME: Scheme = {
       courseDays: 30,
       enableChecklist: true,
       completedSlots: {},
+      stockQuantity: 3,
+      singleDoseUnit: "片",
+      packageSpec: "每瓶 100 片（100mg/片）",
+      refillThreshold: 10,
+      purchaseLocation: "同仁堂药店（解放大道店）",
+      purchaseContact: "药店电话：027-8888-3333",
+      expiryDate: getSampleExpiryDate(3),
+      enableStock: true,
     },
     {
       id: "m-4",
@@ -177,6 +207,14 @@ export const SAMPLE_SCHEME: Scheme = {
       courseDays: 30,
       enableChecklist: true,
       completedSlots: {},
+      stockQuantity: 25,
+      singleDoseUnit: "片",
+      packageSpec: "每瓶 60 片",
+      refillThreshold: 15,
+      purchaseLocation: "京东健康 · 次日达",
+      purchaseContact: "线上购买，凭处方",
+      expiryDate: getSampleExpiryDate(20),
+      enableStock: true,
     },
   ],
   caregivers: SAMPLE_CAREGIVERS,
