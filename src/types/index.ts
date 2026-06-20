@@ -61,12 +61,14 @@ export interface Medicine {
   completedSlots: Record<string, TimeSlot[]>;
   stockQuantity: number;
   singleDoseUnit: string;
+  singleDoseAmount: number;
   packageSpec: string;
   refillThreshold: number;
   purchaseLocation: string;
   purchaseContact: string;
   expiryDate: string;
   enableStock: boolean;
+  consumedDoses: Record<string, number>;
 }
 
 export interface Scheme {

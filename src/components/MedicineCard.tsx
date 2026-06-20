@@ -371,6 +371,23 @@ export default function MedicineCard({
                   </div>
                 </div>
 
+                <div className="rounded-lg bg-white/70 px-3 py-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-paper-muted">库存明细</span>
+                    {computed.totalConsumed > 0 && (
+                      <span className="font-bold text-amber-deep">已服用消耗 {computed.totalConsumed} {medicine.singleDoseUnit || "片"}</span>
+                    )}
+                  </div>
+                  <div className="mt-1 flex items-baseline justify-between">
+                    <span className="text-sm text-paper-muted">
+                      初始 <span className="font-black text-paper-ink">{medicine.stockQuantity}</span> {medicine.singleDoseUnit || "片"}
+                    </span>
+                    <span className="text-base font-black text-green-700">
+                      剩余有效库存 {computed.effectiveStock} {medicine.singleDoseUnit || "片"}
+                    </span>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="mb-1 block text-xs font-bold text-paper-muted">
@@ -391,6 +408,34 @@ export default function MedicineCard({
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-bold text-paper-muted">
+                      单次消耗量
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.25"
+                        value={medicine.singleDoseAmount}
+                        onChange={(e) =>
+                          updateMedicine(medicine.id, {
+                            singleDoseAmount: Math.max(0, parseFloat(e.target.value) || 0),
+                          })
+                        }
+                        className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
+                      />
+                      <span className="w-14 shrink-0 rounded-lg border-2 border-green-200 bg-green-50 px-2 py-1.5 text-center text-sm font-bold text-green-700">
+                        {medicine.singleDoseUnit || "片"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[0.65rem] text-paper-muted">
+                      支持 0.5=半片、0.25=1/4 片等小数
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-paper-muted">
                       单位（片/粒/毫升）
                     </label>
                     <input
@@ -403,9 +448,6 @@ export default function MedicineCard({
                       className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="mb-1 block text-xs font-bold text-paper-muted">
                       包装规格
@@ -420,23 +462,24 @@ export default function MedicineCard({
                       className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
                     />
                   </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-bold text-paper-muted">
-                      补药阈值（剩余≤N天提醒）
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="90"
-                      value={medicine.refillThreshold}
-                      onChange={(e) =>
-                        updateMedicine(medicine.id, {
-                          refillThreshold: Math.max(1, parseInt(e.target.value) || 7),
-                        })
-                      }
-                      className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
-                    />
-                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-paper-muted">
+                    补药阈值（剩余≤N天提醒）
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="90"
+                    value={medicine.refillThreshold}
+                    onChange={(e) =>
+                      updateMedicine(medicine.id, {
+                        refillThreshold: Math.max(1, parseInt(e.target.value) || 7),
+                      })
+                    }
+                    className="w-full rounded-lg border-2 border-paper-line bg-white px-2 py-1.5 text-sm font-semibold text-paper-ink outline-none focus:border-green-500"
+                  />
                 </div>
 
                 <div>
@@ -489,7 +532,7 @@ export default function MedicineCard({
                     <span className="font-bold text-paper-ink">每日消耗：</span>
                     <span className="text-paper-muted">
                       约 {computed.dailyConsumption} {medicine.singleDoseUnit || "片"}
-                      （{medicine.slots.length} 次/日 × 单次剂量）
+                      （{medicine.slots.length} 次/日 × {medicine.singleDoseAmount || 1} {medicine.singleDoseUnit || "片"}/次）
                     </span>
                   </div>
                 </div>

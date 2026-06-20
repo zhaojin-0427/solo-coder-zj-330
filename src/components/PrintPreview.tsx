@@ -44,11 +44,13 @@ export default function PrintPreview() {
 
   if (!open) return null;
 
-  const paper = PAPER_META[settings.paperSize];
+  const isRefill = tab === "refill";
+  const isChecklistOrHandover = tab === "checklist" || tab === "handover";
+  const activePaper = isRefill || isChecklistOrHandover ? PAPER_META.A4 : PAPER_META[settings.paperSize];
   const groups = groupMedicines(medicines);
 
   const pageOrientationClass =
-    tab === "checklist" || tab === "handover"
+    isChecklistOrHandover
       ? settings.checklistOrientation === "landscape"
         ? "page-landscape"
         : "page-portrait"
@@ -245,27 +247,27 @@ export default function PrintPreview() {
           className={cn(
             "print-root mx-auto rounded-xl bg-white p-4 shadow-2xl transition-all duration-300 sm:p-6",
             pageOrientationClass,
-            tab === "checklist" || tab === "handover"
+            isChecklistOrHandover
               ? settings.checklistOrientation === "landscape"
                 ? "max-w-6xl"
                 : "max-w-4xl"
-              : tab === "refill"
+              : isRefill
                 ? "max-w-4xl"
-                : paper.maxWidth,
+                : activePaper.maxWidth,
           )}
           style={
             tab === "pocket"
               ? undefined
-              : tab === "refill"
-                ? { aspectRatio: `${paper.width} / ${paper.height}` }
-                : tab === "checklist" || tab === "handover"
+              : isRefill
+                ? { aspectRatio: `${activePaper.width} / ${activePaper.height}` }
+                : isChecklistOrHandover
                   ? {
                       aspectRatio:
                         settings.checklistOrientation === "landscape"
-                          ? `${paper.height} / ${paper.width}`
-                          : `${paper.width} / ${paper.height}`,
+                          ? `${activePaper.height} / ${activePaper.width}`
+                          : `${activePaper.width} / ${activePaper.height}`,
                     }
-                  : { aspectRatio: `${paper.width} / ${paper.height}` }
+                  : { aspectRatio: `${activePaper.width} / ${activePaper.height}` }
           }
         >
           <div className="mb-4 flex items-center justify-between border-b border-paper-line pb-2 print:hidden">
@@ -274,7 +276,7 @@ export default function PrintPreview() {
             </h3>
             <span className="text-xs font-semibold text-paper-muted">
               {tab === "sticker"
-                ? `${paper.label} · 标签贴纸`
+                ? `${activePaper.label} · 标签贴纸`
                 : tab === "pocket"
                   ? "随身服药卡"
                   : tab === "handover"
@@ -305,7 +307,7 @@ export default function PrintPreview() {
                     <div
                       className="grid gap-3"
                       style={{
-                        gridTemplateColumns: `repeat(${paper.cols}, minmax(0, 1fr))`,
+                        gridTemplateColumns: `repeat(${activePaper.cols}, minmax(0, 1fr))`,
                       }}
                     >
                       {list.map((m) => (
@@ -313,7 +315,7 @@ export default function PrintPreview() {
                           key={m.id}
                           medicine={m}
                           settings={settings}
-                          compact={paper.cols >= 3}
+                          compact={activePaper.cols >= 3}
                         />
                       ))}
                     </div>

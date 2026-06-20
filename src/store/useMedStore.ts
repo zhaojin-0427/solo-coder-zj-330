@@ -27,6 +27,7 @@ import {
   saveSchemes,
   saveSettings,
 } from "@/lib/storage";
+import { parseSingleDoseAmount as parseDoseAmount } from "@/lib/format";
 
 interface MedState {
   medicines: Medicine[];
@@ -96,12 +97,14 @@ function createEmptyMedicine(): Medicine {
     completedSlots: {},
     stockQuantity: 0,
     singleDoseUnit: "片",
+    singleDoseAmount: 1,
     packageSpec: "",
     refillThreshold: 7,
     purchaseLocation: "",
     purchaseContact: "",
     expiryDate: nextYear.toISOString().split("T")[0],
     enableStock: false,
+    consumedDoses: {},
   };
 }
 
@@ -143,12 +146,14 @@ function migrateMedicineFields(m: Medicine): Medicine {
     completedSlots: m.completedSlots ?? {},
     stockQuantity: m.stockQuantity ?? 0,
     singleDoseUnit: m.singleDoseUnit ?? "片",
+    singleDoseAmount: m.singleDoseAmount ?? 1,
     packageSpec: m.packageSpec ?? "",
     refillThreshold: m.refillThreshold ?? 7,
     purchaseLocation: m.purchaseLocation ?? "",
     purchaseContact: m.purchaseContact ?? "",
     expiryDate: m.expiryDate ?? nextYear.toISOString().split("T")[0],
     enableStock: m.enableStock ?? false,
+    consumedDoses: m.consumedDoses ?? {},
   };
 }
 
@@ -427,6 +432,16 @@ export const useMedStore = create<MedState>((set, get) => ({
         if (m.id !== medicineId) return m;
         const completed = m.completedSlots[date] || [];
         const has = completed.includes(slot);
+        const doseKey = `${date}::${slot}`;
+        const singleDose = (m.singleDoseAmount && m.singleDoseAmount > 0)
+          ? m.singleDoseAmount
+          : parseDoseAmount(m.dosage);
+        const consumed = { ...(m.consumedDoses || {}) };
+        if (has) {
+          delete consumed[doseKey];
+        } else {
+          consumed[doseKey] = singleDose;
+        }
         return {
           ...m,
           completedSlots: {
@@ -435,6 +450,7 @@ export const useMedStore = create<MedState>((set, get) => ({
               ? completed.filter((x) => x !== slot)
               : [...completed, slot],
           },
+          consumedDoses: consumed,
         };
       }),
       dirty: true,
@@ -444,7 +460,7 @@ export const useMedStore = create<MedState>((set, get) => ({
   clearCompletedSlots: (medicineId) => {
     set((s) => ({
       medicines: s.medicines.map((m) =>
-        m.id === medicineId ? { ...m, completedSlots: {} } : m,
+        m.id === medicineId ? { ...m, completedSlots: {}, consumedDoses: {} } : m,
       ),
       dirty: true,
     }));

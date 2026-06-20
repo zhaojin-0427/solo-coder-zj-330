@@ -226,7 +226,7 @@ export default function RefillPrint({
                       const c = row.computed;
                       const suggestDays = Math.max(30, m.refillThreshold * 3);
                       const needed = Math.ceil(
-                        Math.max(0, suggestDays * c.dailyConsumption - m.stockQuantity),
+                        Math.max(0, suggestDays * c.dailyConsumption - c.effectiveStock),
                       );
                       return (
                         <tr
@@ -271,7 +271,8 @@ export default function RefillPrint({
                               <p className="text-paper-muted">—</p>
                             )}
                             <p className="text-[0.65rem] text-paper-muted">
-                              当前 {m.stockQuantity} {m.singleDoseUnit}
+                              剩余 {c.effectiveStock} {m.singleDoseUnit}
+                              {c.totalConsumed > 0 && `（已服${c.totalConsumed}）`}
                             </p>
                           </td>
                           <td className="px-3 py-2">
@@ -386,13 +387,16 @@ export default function RefillPrint({
                     </div>
                     <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
                       <div className="rounded-lg bg-white/70 p-1.5">
-                        <p className="font-bold text-paper-muted">当前库存</p>
+                        <p className="font-bold text-paper-muted">剩余库存</p>
                         <p className="text-base font-black text-paper-ink">
-                          {m.stockQuantity}
+                          {c.effectiveStock}
                           <span className="ml-0.5 text-[0.65rem] font-bold text-paper-muted">
                             {m.singleDoseUnit}
                           </span>
                         </p>
+                        {c.totalConsumed > 0 && (
+                          <p className="text-[0.6rem] text-amber-deep">已服{c.totalConsumed}</p>
+                        )}
                       </div>
                       <div className="rounded-lg bg-white/70 p-1.5">
                         <p className="font-bold text-paper-muted">可用天数</p>
@@ -534,8 +538,9 @@ export default function RefillPrint({
                             </p>
                           )}
                           <p className="text-[0.6rem] font-bold text-paper-muted">
-                            库存 {m.stockQuantity}
+                            剩 {c.effectiveStock}
                             {m.singleDoseUnit}
+                            {c.totalConsumed > 0 && `(-${c.totalConsumed})`}
                           </p>
                           {(c.isExpiring || c.isExpired) && (
                             <p

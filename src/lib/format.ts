@@ -183,46 +183,16 @@ export interface StockComputed {
   isLow: boolean;
   isNormal: boolean;
   needRefill: boolean;
-}
-
-export function parseSingleDoseAmount(dosage: string): number {
-  if (!dosage) return 1;
-  const match = dosage.match(/(\d+(?:\.\d+)?)/);
-  if (match) {
-    const val = parseFloat(match[1]);
-    if (val > 0) return val;
-  }
-  return 1;
-}
-
-export function computeDailyConsumption(medicine: Medicine): number {
-  const slotsPerDay = medicine.slots.length;
-  const singleDose = parseSingleDoseAmount(medicine.dosage);
-  return slotsPerDay * singleDose;
-}
-
-export function computeRemainingDays(medicine: Medicine): number {
-  if (!medicine.enableStock) return -1;
-  const daily = computeDailyConsumption(medicine);
-  if (daily <= 0) return -1;
-  const stock = medicine.stockQuantity || 0;
-  return Math.floor(stock / daily);
-}
-
-export function getDaysToExpiry(expiryDate: string): number {
-  if (!expiryDate) return 9999;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiry = new Date(expiryDate);
-  expiry.setHours(0, 0, 0, 0);
-  const diffMs = expiry.getTime() - today.getTime();
-  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  effectiveStock: number;
+  totalConsumed: number;
 }
 
 export function computeStockStatus(medicine: Medicine): StockComputed {
   const dailyConsumption = computeDailyConsumption(medicine);
   const remainingDays = computeRemainingDays(medicine);
   const daysToExpiry = getDaysToExpiry(medicine.expiryDate);
+  const totalConsumed = getTotalConsumed(medicine);
+  const effectiveStock = Math.max(0, (medicine.stockQuantity || 0) - totalConsumed);
 
   const isExpired = daysToExpiry < 0;
   const isExpiring = daysToExpiry >= 0 && daysToExpiry <= 30;
@@ -255,7 +225,62 @@ export function computeStockStatus(medicine: Medicine): StockComputed {
     isLow: stockStatus === "low",
     isNormal: stockStatus === "normal",
     needRefill: stockStatus === "critical" || stockStatus === "low" || stockStatus === "expired" || stockStatus === "expiring",
+    effectiveStock,
+    totalConsumed,
   };
+}
+
+export function parseSingleDoseAmount(dosage: string): number {
+  if (!dosage) return 1;
+  const cnMap: Record<string, number> = {
+    "半": 0.5, "1/2": 0.5, "½": 0.5, "零点五": 0.5, "零點五": 0.5,
+    "一": 1, "两": 2, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10,
+  };
+  for (const cn of Object.keys(cnMap).sort((a, b) => b.length - a.length)) {
+    if (dosage.includes(cn)) return cnMap[cn];
+  }
+  const match = dosage.match(/(\d+(?:\.\d+)?)/);
+  if (match) {
+    const val = parseFloat(match[1]);
+    if (val > 0) return val;
+  }
+  return 1;
+}
+
+export function getSingleDoseAmount(medicine: Medicine): number {
+  if (medicine.singleDoseAmount && medicine.singleDoseAmount > 0) return medicine.singleDoseAmount;
+  return parseSingleDoseAmount(medicine.dosage);
+}
+
+export function getTotalConsumed(medicine: Medicine): number {
+  if (!medicine.consumedDoses) return 0;
+  return Object.values(medicine.consumedDoses).reduce((s, v) => s + (typeof v === "number" ? v : 0), 0);
+}
+
+export function computeDailyConsumption(medicine: Medicine): number {
+  const slotsPerDay = (medicine.slots || []).length;
+  if (slotsPerDay <= 0) return 0;
+  const singleDose = getSingleDoseAmount(medicine);
+  return slotsPerDay * singleDose;
+}
+
+export function computeRemainingDays(medicine: Medicine): number {
+  if (!medicine.enableStock) return -1;
+  const daily = computeDailyConsumption(medicine);
+  if (daily <= 0) return -1;
+  const stock = (medicine.stockQuantity || 0) - getTotalConsumed(medicine);
+  if (stock <= 0) return 0;
+  return Math.floor(stock / daily);
+}
+
+export function getDaysToExpiry(expiryDate: string): number {
+  if (!expiryDate) return 9999;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(expiryDate);
+  expiry.setHours(0, 0, 0, 0);
+  const diffMs = expiry.getTime() - today.getTime();
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }
 
 export const STOCK_STATUS_META: Record<StockStatus, { label: string; bg: string; text: string; ring: string; dot: string; emoji: string }> = {

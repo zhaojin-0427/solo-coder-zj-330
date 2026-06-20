@@ -124,7 +124,9 @@ function StockItemCard({ row, settings }: { row: StockRow; settings: Settings })
             </p>
           )}
           <p className="text-[0.65rem] font-bold text-paper-muted">
-            {medicine.stockQuantity} {medicine.singleDoseUnit || "片"} · 日耗{" "}
+            剩余 {computed.effectiveStock} {medicine.singleDoseUnit || "片"}
+            {computed.totalConsumed > 0 && `（已服${computed.totalConsumed}）`}
+            {" · 日耗 "}
             {computed.dailyConsumption}
           </p>
         </div>
