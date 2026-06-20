@@ -33,8 +33,49 @@ export default function PrintPreview() {
   const paper = PAPER_META[settings.paperSize];
   const groups = groupMedicines(medicines);
 
+  const pageOrientationClass =
+    tab === "checklist"
+      ? settings.checklistOrientation === "landscape"
+        ? "page-landscape"
+        : "page-portrait"
+      : "page-portrait";
+
   const handlePrint = () => {
-    window.print();
+    const styleId = "print-orientation-style";
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+
+    const sizeRule =
+      tab === "checklist"
+        ? settings.checklistOrientation === "landscape"
+          ? "size: A4 landscape;"
+          : "size: A4 portrait;"
+        : "size: A4 portrait;";
+
+    styleEl.textContent = `
+      @media print {
+        @page {
+          ${sizeRule}
+          margin: ${tab === "checklist" && settings.checklistOrientation === "landscape" ? "10mm" : "12mm"};
+        }
+      }
+    `;
+
+    const cleanup = () => {
+      window.removeEventListener("afterprint", cleanup);
+      if (styleEl && styleEl.parentNode) {
+        styleEl.parentNode.removeChild(styleEl);
+      }
+    };
+    window.addEventListener("afterprint", cleanup);
+
+    setTimeout(() => {
+      window.print();
+    }, 50);
   };
 
   return (
@@ -165,6 +206,7 @@ export default function PrintPreview() {
         <div
           className={cn(
             "print-root mx-auto rounded-xl bg-white p-4 shadow-2xl transition-all duration-300 sm:p-6",
+            pageOrientationClass,
             tab === "checklist"
               ? settings.checklistOrientation === "landscape"
                 ? "max-w-6xl"

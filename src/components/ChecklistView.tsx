@@ -58,6 +58,8 @@ export default function ChecklistView({
   }, [weekStartDate]);
 
   const activeMedicines = medicines.filter((m) => m.enableChecklist);
+  const noSlotMedicines = activeMedicines.filter((m) => m.slots.length === 0);
+  const validMedicines = activeMedicines.filter((m) => m.slots.length > 0);
 
   if (activeMedicines.length === 0) {
     return (
@@ -69,6 +71,43 @@ export default function ChecklistView({
       </div>
     );
   }
+
+  const renderNoSlotWarnings = () => {
+    if (noSlotMedicines.length === 0) return null;
+    return (
+      <div className="mb-4 space-y-2">
+        {noSlotMedicines.map((m) => (
+          <div
+            key={m.id}
+            className="flex items-start gap-3 rounded-xl border-2 border-dashed border-red-400 bg-red-50 p-4 animate-pulse"
+          >
+            <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-red-500 text-white font-black text-lg">
+              !
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="font-serif text-base font-black text-red-700">
+                {m.name || "未命名药品"}
+              </p>
+              <p className="text-sm font-bold text-red-600">
+                ⚠️ 未选择任何早/中/晚服药时段，无法生成核对表
+              </p>
+              <p className="mt-0.5 text-xs text-red-500">
+                请在「药品录入」卡片中为该药品勾选至少一个服药时段
+              </p>
+            </div>
+            <div className="flex-shrink-0 rounded-lg bg-white/80 px-3 py-2">
+              <p className="text-[0.65rem] font-bold uppercase tracking-wider text-red-400">
+                漏选时段
+              </p>
+              <p className="text-xs font-black text-red-600">
+                {m.slots.length} / 3
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const renderCheckCell = (cell: ChecklistCell) => {
     const theme = slotTheme(cell.slot);
@@ -114,8 +153,87 @@ export default function ChecklistView({
     const grouped = groupCellsByDrug(cells);
     const medicineMap = new Map(medicines.map((m) => [m.id, m]));
 
+    const noSlotCards =
+      noSlotMedicines.length > 0 ? (
+        <div className="space-y-2">
+          {noSlotMedicines.map((m) => (
+            <div
+              key={m.id}
+              className="overflow-hidden rounded-xl border-2 border-dashed border-red-400 bg-red-50"
+            >
+              <div className="flex items-center justify-between border-b border-red-200 bg-red-100 px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white font-black animate-pulse">
+                    !
+                  </span>
+                  <div>
+                    <h4 className="font-serif text-base font-black text-red-800">
+                      {m.name || "未命名药品"}
+                    </h4>
+                    <p className="text-xs font-bold text-red-600">
+                      {m.dosage || "—"} · {m.frequency}
+                    </p>
+                  </div>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-red-600 border border-red-300">
+                  ⚠️ 漏选 {3 - m.slots.length} 个时段
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-red-100/50">
+                      <th className="border border-red-200 px-2 py-1.5 text-xs font-bold text-red-700">
+                        日期
+                      </th>
+                      {SLOT_LIST.map((slot) => (
+                        <th
+                          key={slot.key}
+                          className="border border-red-200 px-2 py-1.5 text-xs font-bold text-red-700 bg-red-200/50"
+                        >
+                          {showIcons && <span className="mr-1">{slot.emoji}</span>}
+                          {slot.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {weekDates.map((date) => (
+                      <tr key={date}>
+                        <td className="border border-red-200 px-2 py-1 text-sm font-bold text-red-800 bg-red-50/50">
+                          <div>{formatDate(date)}</div>
+                          <div className="text-xs font-normal text-red-600">
+                            {getDayOfWeek(date)}
+                          </div>
+                        </td>
+                        {SLOT_LIST.map((slot) => (
+                          <td
+                            key={slot.key}
+                            className="border border-red-200 p-0.5"
+                            style={{ width: "60px", height: "48px" }}
+                          >
+                            <div className="flex h-full w-full items-center justify-center bg-red-100 text-red-400 font-black text-lg">
+                              ✕
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null;
+
+    if (validMedicines.length === 0) {
+      return noSlotCards;
+    }
+
     return (
       <div className="space-y-4">
+        {noSlotCards}
         {Array.from(grouped.entries()).map(([medId, medCells]) => {
           const medicine = medicineMap.get(medId);
           if (!medicine) return null;
@@ -217,18 +335,13 @@ export default function ChecklistView({
 
   const renderByDate = () => {
     const grouped = groupCellsByDate(cells);
-    const medicineMap = new Map(medicines.map((m) => [m.id, m]));
 
     return (
       <div className="space-y-4">
+        {renderNoSlotWarnings()}
         {weekDates.map((date) => {
           const dayCells = grouped.get(date) || [];
           const dayMissed = dayCells.filter((c) => c.isMissed).length;
-          const cellsBySlot = new Map<string, ChecklistCell[]>();
-          for (const cell of dayCells) {
-            if (!cellsBySlot.has(cell.slot)) cellsBySlot.set(cell.slot, []);
-            cellsBySlot.get(cell.slot)!.push(cell);
-          }
 
           return (
             <div key={date} className="overflow-hidden rounded-xl border border-paper-line">
@@ -275,7 +388,7 @@ export default function ChecklistView({
                     </tr>
                   </thead>
                   <tbody>
-                    {activeMedicines.map((medicine) => {
+                    {validMedicines.map((medicine) => {
                       const medCellsForDate = dayCells.filter(
                         (c) => c.medicineId === medicine.id,
                       );
@@ -310,6 +423,32 @@ export default function ChecklistView({
                         </tr>
                       );
                     })}
+                    {noSlotMedicines.map((medicine) => (
+                      <tr key={medicine.id} className="bg-red-50">
+                        <td className="border-2 border-dashed border-red-300 px-2 py-1 text-sm font-bold text-red-800">
+                          <div className="flex items-center gap-1">
+                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[0.5rem] font-black animate-pulse">
+                              !
+                            </span>
+                            {medicine.name || "未命名药品"}
+                          </div>
+                          <div className="text-[0.65rem] font-bold text-red-600 pl-5">
+                            ⚠️ 漏选时段
+                          </div>
+                        </td>
+                        {SLOT_LIST.map((slot) => (
+                          <td
+                            key={slot.key}
+                            className="border-2 border-dashed border-red-300 p-0.5"
+                            style={{ width: "60px", height: "48px" }}
+                          >
+                            <div className="flex h-full w-full items-center justify-center bg-red-100 text-red-400 font-black text-lg">
+                              ✕
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -425,6 +564,10 @@ export default function ChecklistView({
         </div>
       </div>
 
+      {noSlotMedicines.length > 0 &&
+        settings.checklistGroupMode === "byDrug" &&
+        renderNoSlotWarnings()}
+
       <div className="mb-4 flex flex-wrap gap-4 rounded-xl border-2 border-dashed border-amber-soft bg-amber-tint/20 p-3">
         <div className="flex items-center gap-2 text-xs">
           <span className="flex h-6 w-6 items-center justify-center rounded bg-morning text-white font-black">
@@ -450,11 +593,25 @@ export default function ChecklistView({
           </span>
           <span className="font-bold text-paper-ink">疗程外</span>
         </div>
+        {noSlotMedicines.length > 0 && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="flex h-6 w-6 items-center justify-center rounded-2xl border-2 border-dashed border-red-400 bg-red-100 text-red-500 font-black">
+              ✕
+            </span>
+            <span className="font-bold text-red-600">
+              漏选时段（{noSlotMedicines.length}）
+            </span>
+          </div>
+        )}
       </div>
 
-      {settings.checklistGroupMode === "byDrug"
-        ? renderByDrug()
-        : renderByDate()}
+      {validMedicines.length === 0 && noSlotMedicines.length === 0 ? (
+        <p className="py-10 text-center text-paper-muted">暂无可用的核对数据</p>
+      ) : settings.checklistGroupMode === "byDrug" ? (
+        renderByDrug()
+      ) : (
+        renderByDate()
+      )}
     </div>
   );
 }

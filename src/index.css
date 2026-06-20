@@ -167,6 +167,17 @@ html[data-contrast="high"] .print-root .bg-green-600 {
   @page {
     margin: 12mm;
   }
+
+  @page page-portrait {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  @page page-landscape {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
   html,
   body {
     background: #ffffff !important;
@@ -190,6 +201,14 @@ html[data-contrast="high"] .print-root .bg-green-600 {
   }
   .print-page-break {
     break-after: page;
+  }
+
+  .print-root.page-portrait {
+    page: page-portrait;
+  }
+
+  .print-root.page-landscape {
+    page: page-landscape;
   }
 
   .print-root table {
@@ -230,6 +249,9 @@ html[data-contrast="high"] .print-root .bg-green-600 {
     color: #ff0000 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+  .print-root .animate-pulse {
+    animation: none !important;
   }
 }
 
