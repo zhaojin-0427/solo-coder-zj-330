@@ -1,11 +1,19 @@
 import { useState } from "react";
-import { X, Printer, StickyNote, CreditCard, ListChecks } from "lucide-react";
+import {
+  X,
+  Printer,
+  StickyNote,
+  CreditCard,
+  ListChecks,
+  ClipboardList,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PAPER_META } from "@/lib/constants";
 import { useMedStore } from "@/store/useMedStore";
 import StickerLabel from "@/components/StickerLabel";
 import PocketCard from "@/components/PocketCard";
 import ChecklistView from "@/components/ChecklistView";
+import HandoverPrint from "@/components/HandoverPrint";
 import type { Medicine, PaperSize } from "@/types";
 
 function groupMedicines(medicines: Medicine[]): [string, Medicine[]][] {
@@ -22,11 +30,15 @@ export default function PrintPreview() {
   const open = useMedStore((s) => s.previewOpen);
   const setOpen = useMedStore((s) => s.setPreviewOpen);
   const medicines = useMedStore((s) => s.medicines);
+  const caregivers = useMedStore((s) => s.caregivers);
+  const handoverRecords = useMedStore((s) => s.handoverRecords);
   const settings = useMedStore((s) => s.settings);
   const currentName = useMedStore((s) => s.currentName);
   const setPaper = useMedStore((s) => s.setPaper);
 
-  const [tab, setTab] = useState<"sticker" | "pocket" | "checklist">("sticker");
+  const [tab, setTab] = useState<
+    "sticker" | "pocket" | "checklist" | "handover"
+  >("sticker");
 
   if (!open) return null;
 
@@ -34,7 +46,7 @@ export default function PrintPreview() {
   const groups = groupMedicines(medicines);
 
   const pageOrientationClass =
-    tab === "checklist"
+    tab === "checklist" || tab === "handover"
       ? settings.checklistOrientation === "landscape"
         ? "page-landscape"
         : "page-portrait"
@@ -50,7 +62,7 @@ export default function PrintPreview() {
     }
 
     const sizeRule =
-      tab === "checklist"
+      tab === "checklist" || tab === "handover"
         ? settings.checklistOrientation === "landscape"
           ? "size: A4 landscape;"
           : "size: A4 portrait;"
@@ -60,7 +72,7 @@ export default function PrintPreview() {
       @media print {
         @page {
           ${sizeRule}
-          margin: ${tab === "checklist" && settings.checklistOrientation === "landscape" ? "10mm" : "12mm"};
+          margin: ${(tab === "checklist" || tab === "handover") && settings.checklistOrientation === "landscape" ? "10mm" : "12mm"};
         }
       }
     `;
@@ -117,6 +129,17 @@ export default function PrintPreview() {
               <ListChecks size={15} />
               核对清单
             </button>
+            <button
+              type="button"
+              onClick={() => setTab("handover")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-bold transition",
+                tab === "handover" ? "bg-amber text-zinc-900" : "text-white/80",
+              )}
+            >
+              <ClipboardList size={15} />
+              交接清单
+            </button>
           </div>
         </div>
 
@@ -140,7 +163,7 @@ export default function PrintPreview() {
               ))}
             </div>
           )}
-          {tab === "checklist" && (
+          {(tab === "checklist" || tab === "handover") && (
             <div className="flex items-center gap-1 rounded-lg bg-white/10 p-0.5">
               <span className="px-2 text-xs font-bold text-white/60">
                 A4 排版
@@ -226,7 +249,7 @@ export default function PrintPreview() {
                 : { aspectRatio: `${paper.width} / ${paper.height}` }
           }
         >
-          <div className="mb-4 flex items-center justify-between border-b border-paper-line pb-2">
+          <div className="mb-4 flex items-center justify-between border-b border-paper-line pb-2 print:hidden">
             <h3 className="font-serif text-xl font-black text-paper-ink">
               {currentName || "服药方案"}
             </h3>
@@ -235,9 +258,13 @@ export default function PrintPreview() {
                 ? `${paper.label} · 标签贴纸`
                 : tab === "pocket"
                   ? "随身服药卡"
-                  : settings.checklistOrientation === "landscape"
-                    ? "A4 横向 · 服药核对清单"
-                    : "A4 纵向 · 服药核对清单"}
+                  : tab === "handover"
+                    ? settings.checklistOrientation === "landscape"
+                      ? "A4 横向 · 交接清单"
+                      : "A4 纵向 · 交接清单"
+                    : settings.checklistOrientation === "landscape"
+                      ? "A4 横向 · 服药核对清单"
+                      : "A4 纵向 · 服药核对清单"}
             </span>
           </div>
 
@@ -279,8 +306,17 @@ export default function PrintPreview() {
                 name={currentName}
                 medicines={medicines}
                 settings={settings}
+                caregivers={caregivers}
+                handoverRecords={handoverRecords}
               />
             </div>
+          ) : tab === "handover" ? (
+            <HandoverPrint
+              settings={settings}
+              caregivers={caregivers}
+              handoverRecords={handoverRecords}
+              schemeName={currentName}
+            />
           ) : (
             <ChecklistView medicines={medicines} settings={settings} />
           )}

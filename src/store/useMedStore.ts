@@ -8,11 +8,16 @@ import type {
   FontSizeLevel,
   ChecklistGroupMode,
   ChecklistOrientation,
+  Medicine,
+  Caregiver,
+  HandoverRecord,
+  HandoverItemKey,
 } from "@/types";
 import {
   DEFAULT_SETTINGS,
   SAMPLE_SCHEME,
   uid,
+  HANDOVER_ITEMS,
 } from "@/lib/constants";
 import {
   loadCurrentId,
@@ -22,10 +27,11 @@ import {
   saveSchemes,
   saveSettings,
 } from "@/lib/storage";
-import type { Medicine } from "@/types";
 
 interface MedState {
   medicines: Medicine[];
+  caregivers: Caregiver[];
+  handoverRecords: HandoverRecord[];
   schemes: Scheme[];
   settings: Settings;
   currentName: string;
@@ -41,6 +47,17 @@ interface MedState {
   setMeal: (id: string, meal: MealRelation) => void;
   toggleChecklistSlot: (medicineId: string, date: string, slot: TimeSlot) => void;
   clearCompletedSlots: (medicineId: string) => void;
+
+  addCaregiver: () => void;
+  updateCaregiver: (id: string, patch: Partial<Caregiver>) => void;
+  removeCaregiver: (id: string) => void;
+  toggleCaregiverSlot: (id: string, slot: TimeSlot) => void;
+
+  getHandoverRecord: (date: string, slot: TimeSlot) => HandoverRecord | undefined;
+  updateHandoverRecord: (date: string, slot: TimeSlot, patch: Partial<HandoverRecord>) => void;
+  toggleHandoverItem: (date: string, slot: TimeSlot, item: HandoverItemKey) => void;
+  setHandoverCaregiver: (date: string, slot: TimeSlot, caregiverId: string | null) => void;
+  setHandoverNote: (date: string, slot: TimeSlot, note: string) => void;
 
   newScheme: () => void;
   loadSample: () => void;
@@ -78,6 +95,25 @@ function createEmptyMedicine(): Medicine {
   };
 }
 
+function createEmptyCaregiver(): Caregiver {
+  return {
+    id: uid(),
+    name: "",
+    relation: "",
+    phone: "",
+    slots: [],
+    note: "",
+  };
+}
+
+function createEmptyHandoverItems(): Record<HandoverItemKey, boolean> {
+  const items = {} as Record<HandoverItemKey, boolean>;
+  for (const h of HANDOVER_ITEMS) {
+    items[h.key] = false;
+  }
+  return items;
+}
+
 function applySettingsToDom(settings: Settings): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
@@ -96,10 +132,19 @@ function migrateMedicineFields(m: Medicine): Medicine {
   };
 }
 
+function migrateSchemeFields(s: Scheme): Scheme {
+  return {
+    ...s,
+    caregivers: s.caregivers ?? [],
+    handoverRecords: s.handoverRecords ?? [],
+    medicines: s.medicines.map(migrateMedicineFields),
+  };
+}
+
 const initialSettings = loadSettings();
 applySettingsToDom(initialSettings);
 
-const persistedSchemes = loadSchemes();
+const persistedSchemes = loadSchemes().map(migrateSchemeFields);
 const initialCurrentId = loadCurrentId();
 const initialScheme =
   persistedSchemes.find((s) => s.id === initialCurrentId) ?? null;
@@ -107,10 +152,16 @@ const initialScheme =
 const initialMedicines = (
   initialScheme?.medicines ?? SAMPLE_SCHEME.medicines
 ).map(migrateMedicineFields);
+const initialCaregivers =
+  initialScheme?.caregivers ?? SAMPLE_SCHEME.caregivers;
+const initialHandoverRecords =
+  initialScheme?.handoverRecords ?? SAMPLE_SCHEME.handoverRecords;
 const initialName = initialScheme?.name ?? "新建方案";
 
 export const useMedStore = create<MedState>((set, get) => ({
   medicines: initialMedicines,
+  caregivers: initialCaregivers,
+  handoverRecords: initialHandoverRecords,
   schemes: persistedSchemes,
   settings: initialSettings,
   currentName: initialName,
@@ -168,9 +219,94 @@ export const useMedStore = create<MedState>((set, get) => ({
     }));
   },
 
+  addCaregiver: () => {
+    set((s) => ({ caregivers: [...s.caregivers, createEmptyCaregiver()], dirty: true }));
+  },
+
+  updateCaregiver: (id, patch) => {
+    set((s) => ({
+      caregivers: s.caregivers.map((c) =>
+        c.id === id ? { ...c, ...patch } : c,
+      ),
+      dirty: true,
+    }));
+  },
+
+  removeCaregiver: (id) => {
+    set((s) => ({
+      caregivers: s.caregivers.filter((c) => c.id !== id),
+      dirty: true,
+    }));
+  },
+
+  toggleCaregiverSlot: (id, slot) => {
+    set((s) => ({
+      caregivers: s.caregivers.map((c) => {
+        if (c.id !== id) return c;
+        const has = c.slots.includes(slot);
+        return {
+          ...c,
+          slots: has ? c.slots.filter((x) => x !== slot) : [...c.slots, slot],
+        };
+      }),
+      dirty: true,
+    }));
+  },
+
+  getHandoverRecord: (date, slot) => {
+    return get().handoverRecords.find(
+      (r) => r.date === date && r.slot === slot,
+    );
+  },
+
+  updateHandoverRecord: (date, slot, patch) => {
+    set((s) => {
+      const existing = s.handoverRecords.find(
+        (r) => r.date === date && r.slot === slot,
+      );
+      let records: HandoverRecord[];
+      if (existing) {
+        records = s.handoverRecords.map((r) =>
+          r.date === date && r.slot === slot
+            ? { ...r, ...patch, updatedAt: Date.now() }
+            : r,
+        );
+      } else {
+        const newRecord: HandoverRecord = {
+          date,
+          slot,
+          caregiverId: null,
+          items: createEmptyHandoverItems(),
+          note: "",
+          updatedAt: Date.now(),
+          ...patch,
+        };
+        records = [...s.handoverRecords, newRecord];
+      }
+      return { handoverRecords: records, dirty: true };
+    });
+  },
+
+  toggleHandoverItem: (date, slot, item) => {
+    const record = get().getHandoverRecord(date, slot);
+    const currentItems = record?.items ?? createEmptyHandoverItems();
+    const newItems = { ...currentItems, [item]: !currentItems[item] };
+    get().updateHandoverRecord(date, slot, { items: newItems });
+  },
+
+  setHandoverCaregiver: (date, slot, caregiverId) => {
+    get().updateHandoverRecord(date, slot, { caregiverId });
+  },
+
+  setHandoverNote: (date, slot, note) => {
+    get().updateHandoverRecord(date, slot, { note });
+  },
+
   newScheme: () => {
     set({
       medicines: [createEmptyMedicine()],
+      caregivers: [],
+      handoverRecords: [],
       currentName: "新建方案",
       dirty: true,
     });
@@ -182,6 +318,8 @@ export const useMedStore = create<MedState>((set, get) => ({
       medicines: SAMPLE_SCHEME.medicines.map((m) =>
         migrateMedicineFields({ ...m, id: uid() }),
       ),
+      caregivers: SAMPLE_SCHEME.caregivers.map((c) => ({ ...c, id: uid() })),
+      handoverRecords: [],
       currentName: SAMPLE_SCHEME.name,
       dirty: true,
     });
@@ -199,7 +337,13 @@ export const useMedStore = create<MedState>((set, get) => ({
       id = existing.id;
       schemes = state.schemes.map((s) =>
         s.id === id
-          ? { ...s, medicines: state.medicines, updatedAt: now }
+          ? {
+              ...s,
+              medicines: state.medicines,
+              caregivers: state.caregivers,
+              handoverRecords: state.handoverRecords,
+              updatedAt: now,
+            }
           : s,
       );
     } else {
@@ -209,6 +353,8 @@ export const useMedStore = create<MedState>((set, get) => ({
           id,
           name: trimmed,
           medicines: state.medicines,
+          caregivers: state.caregivers,
+          handoverRecords: state.handoverRecords,
           createdAt: now,
           updatedAt: now,
         },
@@ -221,9 +367,12 @@ export const useMedStore = create<MedState>((set, get) => ({
   },
 
   loadScheme: (scheme) => {
+    const migrated = migrateSchemeFields(scheme);
     set({
-      medicines: scheme.medicines.map((m) => migrateMedicineFields({ ...m })),
-      currentName: scheme.name,
+      medicines: migrated.medicines.map((m) => ({ ...m })),
+      caregivers: migrated.caregivers.map((c) => ({ ...c })),
+      handoverRecords: migrated.handoverRecords.map((r) => ({ ...r })),
+      currentName: migrated.name,
       dirty: false,
     });
     saveCurrentId(scheme.id);

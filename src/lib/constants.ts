@@ -8,7 +8,24 @@ import type {
   TimeSlot,
   ChecklistGroupMode,
   ChecklistOrientation,
+  HandoverItemKey,
+  Caregiver,
+  HandoverRecord,
 } from "@/types";
+
+export interface HandoverItemMeta {
+  key: HandoverItemKey;
+  label: string;
+  emoji: string;
+  description: string;
+}
+
+export const HANDOVER_ITEMS: HandoverItemMeta[] = [
+  { key: "prepared", label: "已备药", emoji: "💊", description: "药品已准备好，摆放到对应时段" },
+  { key: "reminded", label: "已提醒", emoji: "🔔", description: "已提醒老人按时服药" },
+  { key: "observed", label: "已观察不适", emoji: "👁️", description: "观察服药后是否有不适反应" },
+  { key: "contacted", label: "已联系医生/家属", emoji: "📞", description: "如有异常已联系医生或家属" },
+];
 
 export const SLOT_LIST: SlotMeta[] = [
   { key: "morning", label: "早晨", time: "07:00", emoji: "☀️" },
@@ -64,9 +81,40 @@ export function mealMeta(key: MealRelation): MealMeta {
   return MEAL_LIST.find((m) => m.key === key) ?? MEAL_LIST[3];
 }
 
+export function handoverItemMeta(key: HandoverItemKey): HandoverItemMeta {
+  return HANDOVER_ITEMS.find((h) => h.key === key) ?? HANDOVER_ITEMS[0];
+}
+
 export function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
+
+export const SAMPLE_CAREGIVERS: Caregiver[] = [
+  {
+    id: "c-1",
+    name: "大儿子",
+    relation: "儿子",
+    phone: "138-0000-1111",
+    slots: ["morning"],
+    note: "负责早晨送药和测血压",
+  },
+  {
+    id: "c-2",
+    name: "大儿媳",
+    relation: "儿媳",
+    phone: "138-0000-2222",
+    slots: ["noon"],
+    note: "中午送饭和提醒服药",
+  },
+  {
+    id: "c-3",
+    name: "小女儿",
+    relation: "女儿",
+    phone: "139-0000-3333",
+    slots: ["evening"],
+    note: "晚上陪护和观察夜间情况",
+  },
+];
 
 export const SAMPLE_SCHEME: Scheme = {
   id: "sample-001",
@@ -131,6 +179,8 @@ export const SAMPLE_SCHEME: Scheme = {
       completedSlots: {},
     },
   ],
+  caregivers: SAMPLE_CAREGIVERS,
+  handoverRecords: [],
 };
 
 export const DEFAULT_SETTINGS = {

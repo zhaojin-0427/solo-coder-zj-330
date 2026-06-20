@@ -1,25 +1,51 @@
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { SLOT_LIST, mealMeta } from "@/lib/constants";
-import { slotTheme, formatDate, getDayOfWeek, isDateInCourse } from "@/lib/format";
+import {
+  slotTheme,
+  formatDate,
+  getDayOfWeek,
+  isDateInCourse,
+} from "@/lib/format";
 import { useMedStore } from "@/store/useMedStore";
-import type { Medicine, Settings, TimeSlot } from "@/types";
+import type {
+  Medicine,
+  Settings,
+  TimeSlot,
+  Caregiver,
+  HandoverRecord,
+} from "@/types";
 
 interface PocketCardProps {
   name: string;
   medicines: Medicine[];
   settings: Settings;
+  caregivers?: Caregiver[];
+  handoverRecords?: HandoverRecord[];
 }
 
 export default function PocketCard({
   name,
   medicines,
   settings,
+  caregivers = [],
+  handoverRecords = [],
 }: PocketCardProps) {
   const showIcons = settings.showIcons;
   const toggleChecklistSlot = useMedStore((s) => s.toggleChecklistSlot);
 
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  const todayCaregivers = useMemo(() => {
+    const map = new Map<TimeSlot, Caregiver[]>();
+    for (const slot of SLOT_LIST.map((s) => s.key)) {
+      const slotCaregivers = caregivers.filter((c) => c.slots.includes(slot));
+      map.set(slot, slotCaregivers);
+    }
+    return map;
+  }, [caregivers]);
+
+  const hasCaregivers = caregivers.length > 0;
 
   const todayChecklist = useMemo(() => {
     return medicines
@@ -116,6 +142,56 @@ export default function PocketCard({
           按时段服药，勿漏服勿加倍。如有不适请及时联系家人或医生。
         </p>
       </div>
+
+      {hasCaregivers && (
+        <div className="border-t-2 border-dashed border-paper-line bg-green-50 px-3 py-2">
+          <p className="mb-1.5 text-[0.6rem] font-bold uppercase tracking-wider text-green-700">
+            今日照护联系人
+          </p>
+          <div className="space-y-1">
+            {SLOT_LIST.map((slot) => {
+              const list = todayCaregivers.get(slot.key) || [];
+              if (list.length === 0) return null;
+              const theme = slotTheme(slot.key);
+              return (
+                <div key={slot.key} className="flex items-start gap-1.5">
+                  <span
+                    className={cn(
+                      "mt-0.5 flex-shrink-0 rounded px-1 text-[0.55rem] font-black",
+                      theme.chip,
+                    )}
+                  >
+                    {slot.label}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    {list.map((c, i) => (
+                      <div
+                        key={c.id}
+                        className={cn(
+                          "flex items-baseline justify-between gap-2",
+                          i > 0 && "mt-0.5",
+                        )}
+                      >
+                        <span className="truncate text-[0.7rem] font-bold text-paper-ink">
+                          {c.name || "未命名"}
+                          {c.relation && (
+                            <span className="ml-1 text-[0.6rem] font-normal text-paper-muted">
+                              ({c.relation})
+                            </span>
+                          )}
+                        </span>
+                        <span className="flex-shrink-0 font-mono text-[0.65rem] font-bold text-amber-deep">
+                          {c.phone || "—"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {todayChecklist.length > 0 && (
         <div className="border-t-2 border-dashed border-paper-line bg-amber-soft/30 px-3 py-2">

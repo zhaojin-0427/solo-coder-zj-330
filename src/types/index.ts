@@ -10,6 +10,30 @@ export type ChecklistGroupMode = "byDrug" | "byDate";
 
 export type ChecklistOrientation = "portrait" | "landscape";
 
+export type HandoverItemKey =
+  | "prepared"
+  | "reminded"
+  | "observed"
+  | "contacted";
+
+export interface Caregiver {
+  id: string;
+  name: string;
+  relation: string;
+  phone: string;
+  slots: TimeSlot[];
+  note: string;
+}
+
+export interface HandoverRecord {
+  date: string;
+  slot: TimeSlot;
+  caregiverId: string | null;
+  items: Record<HandoverItemKey, boolean>;
+  note: string;
+  updatedAt: number;
+}
+
 export interface Medicine {
   id: string;
   name: string;
@@ -29,6 +53,8 @@ export interface Scheme {
   id: string;
   name: string;
   medicines: Medicine[];
+  caregivers: Caregiver[];
+  handoverRecords: HandoverRecord[];
   createdAt: number;
   updatedAt: number;
 }
